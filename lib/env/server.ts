@@ -3,14 +3,19 @@ type RequiredServerEnvKey =
   | "BETTER_AUTH_SECRET"
   | "BETTER_AUTH_URL"
   | "GOOGLE_CLIENT_ID"
-  | "GOOGLE_CLIENT_SECRET"
+  | "GOOGLE_CLIENT_SECRET";
 
-type OptionalServerEnvKey = "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+type OptionalServerEnvKey =
+  | "NEXT_PUBLIC_SUPABASE_URL"
+  | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  | "AI_PROVIDER"
+  | "AI_API_KEY"
+  | "AI_MODEL";
 
 type ServerEnv = Record<RequiredServerEnvKey, string> &
-  Partial<Record<OptionalServerEnvKey, string>>
+  Partial<Record<OptionalServerEnvKey, string>>;
 
-let cachedEnv: ServerEnv | undefined
+let cachedEnv: ServerEnv | undefined;
 
 const requiredKeys: RequiredServerEnvKey[] = [
   "DATABASE_URL",
@@ -18,17 +23,19 @@ const requiredKeys: RequiredServerEnvKey[] = [
   "BETTER_AUTH_URL",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
-]
+];
 
 export const getServerEnv = () => {
   if (cachedEnv) {
-    return cachedEnv
+    return cachedEnv;
   }
 
-  const missingKeys = requiredKeys.filter((key) => !process.env[key])
+  const missingKeys = requiredKeys.filter((key) => !process.env[key]);
 
   if (missingKeys.length > 0) {
-    throw new Error(`Missing required server environment variables: ${missingKeys.join(", ")}`)
+    throw new Error(
+      `Missing required server environment variables: ${missingKeys.join(", ")}`,
+    );
   }
 
   cachedEnv = {
@@ -39,7 +46,10 @@ export const getServerEnv = () => {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET as string,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  }
+    AI_PROVIDER: process.env.AI_PROVIDER,
+    AI_API_KEY: process.env.AI_API_KEY,
+    AI_MODEL: process.env.AI_MODEL,
+  };
 
-  return cachedEnv
-}
+  return cachedEnv;
+};
