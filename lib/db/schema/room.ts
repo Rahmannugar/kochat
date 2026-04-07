@@ -21,6 +21,7 @@ export const rooms = pgTable(
     description: text("description"),
     type: roomTypeEnum("type").notNull(),
     code: text("code"),
+    dmKey: text("dm_key"),
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -29,10 +30,11 @@ export const rooms = pgTable(
   },
   (table) => [
     uniqueIndex("rooms_code_unique").on(table.code),
+    uniqueIndex("rooms_dm_key_unique").on(table.dmKey),
     index("rooms_type_idx").on(table.type),
     check(
-      "rooms_type_code_check",
-      sql`(${table.type} = 'group' and ${table.code} is not null) or (${table.type} = 'dm' and ${table.code} is null)`,
+      "rooms_type_code_dm_key_check",
+      sql`(${table.type} = 'group' and ${table.code} is not null and ${table.dmKey} is null) or (${table.type} = 'dm' and ${table.code} is null and ${table.dmKey} is not null)`,
     ),
   ],
 );

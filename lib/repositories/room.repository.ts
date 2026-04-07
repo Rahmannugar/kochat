@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { roomMembers, rooms } from "@/lib/db/schema"
 
@@ -7,6 +7,7 @@ type CreateRoomInput = {
   description?: string
   type: "dm" | "group"
   code?: string | null
+  dmKey?: string | null
   createdBy?: string
 }
 
@@ -36,7 +37,13 @@ export const roomRepository = {
     })
   },
 
-  create: async ({ name, description, type, code, createdBy }: CreateRoomInput) => {
+  findByDmKey: async (dmKey: string) => {
+    return db.query.rooms.findFirst({
+      where: eq(rooms.dmKey, dmKey),
+    })
+  },
+
+  create: async ({ name, description, type, code, dmKey, createdBy }: CreateRoomInput) => {
     const [room] = await db
       .insert(rooms)
       .values({
@@ -44,11 +51,33 @@ export const roomRepository = {
         description,
         type,
         code: code ?? null,
+        dmKey: dmKey ?? null,
         createdBy,
       })
       .returning()
 
     return room
+  },
+
+  createDirectRoom: async ({ name, dmKey, createdBy }: { name: string; dmKey: string; createdBy: string }) => {
+    const [room] = await db
+      .insert(rooms)
+      .values({
+        name,
+        type: "dm",
+        dmKey,
+        createdBy,
+      })
+      .onConflictDoNothing()
+      .returning()
+
+    if (room) {
+      return room
+    }
+
+    return db.query.rooms.findFirst({
+      where: eq(rooms.dmKey, dmKey),
+    })
   },
 
   listForUser: async (userId: string) => {
@@ -109,32 +138,6 @@ export const roomRepository = {
       where: eq(roomMembers.roomId, roomId),
       with: {
         user: true,
-      },
-    })
-  },
-
-  listDirectRoomCandidatesForUsers: async (userIds: [string, string]) => {
-    const memberships = await db.query.roomMembers.findMany({
-      where: inArray(roomMembers.userId, userIds),
-      with: {
-        room: true,
-      },
-    })
-
-    const candidateRoomIds = [...new Set(
-      memberships
-        .filter((membership) => membership.room.type === "dm")
-        .map((membership) => membership.roomId),
-    )]
-
-    if (candidateRoomIds.length === 0) {
-      return []
-    }
-
-    return db.query.rooms.findMany({
-      where: inArray(rooms.id, candidateRoomIds),
-      with: {
-        members: true,
       },
     })
   },

@@ -34,10 +34,36 @@ const assertActiveRoomMembership = async (roomId: string, userId: string) => {
 }
 
 export const messageService = {
-  listRoomMessages: async (roomId: string, userId: string, limit = 30) => {
+  listRoomMessages: async ({
+    roomId,
+    userId,
+    limit = 30,
+    cursor,
+  }: {
+    roomId: string
+    userId: string
+    limit?: number
+    cursor?: string
+  }) => {
     await assertActiveRoomMembership(roomId, userId)
 
-    return messageRepository.listByRoomId(roomId, limit)
+    const page = await messageRepository.listPageByRoomId({
+      roomId,
+      limit,
+      cursorId: cursor,
+    })
+
+    const hasNextPage = page.length > limit
+    const items = hasNextPage ? page.slice(0, limit) : page
+    const nextCursor = hasNextPage ? items.at(-1)?.id ?? null : null
+
+    return {
+      items,
+      pageInfo: {
+        hasNextPage,
+        nextCursor,
+      },
+    }
   },
 
   searchRoomMessages: async (roomId: string, userId: string, query: string, limit = 20) => {

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { nameSchema, usernameSchema } from "@/lib/users/user.schema"
 
 export const signInSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -9,10 +10,8 @@ export const signInSchema = z.object({
 })
 
 export const signUpSchema = signInSchema.extend({
-  name: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be 50 characters or fewer"),
+  name: nameSchema,
+  username: usernameSchema,
 })
 
 export type SignInValues = z.infer<typeof signInSchema>

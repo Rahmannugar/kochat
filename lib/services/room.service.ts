@@ -6,30 +6,8 @@ const createSecureCode = () =>
   crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase();
 
 const createGroupCode = () => `${GROUP_ROOM_CODE_PREFIX}-${createSecureCode()}`;
-
-const getExistingDirectRoom = async (
-  currentUserId: string,
-  targetUserId: string,
-) => {
-  const candidateRooms = await roomRepository.listDirectRoomCandidatesForUsers([
-    currentUserId,
-    targetUserId,
-  ]);
-
-  return (
-    candidateRooms.find((room) => {
-      if (room.type !== "dm" || room.members.length !== 2) {
-        return false;
-      }
-
-      const memberIds = room.members.map((member) => member.userId);
-
-      return (
-        memberIds.includes(currentUserId) && memberIds.includes(targetUserId)
-      );
-    }) ?? null
-  );
-};
+const createDirectMessageKey = (firstUserId: string, secondUserId: string) =>
+  [firstUserId, secondUserId].sort().join(":");
 
 const ensureActiveMembership = async (
   roomId: string,
@@ -150,26 +128,16 @@ export const roomService = {
     if (!targetUser) {
       throw new Error("Target user was not found");
     }
-
-    const existingRoom = await getExistingDirectRoom(
-      currentUserId,
-      targetUserId,
-    );
-
-    if (existingRoom) {
-      await Promise.all([
-        ensureActiveMembership(existingRoom.id, currentUserId),
-        ensureActiveMembership(existingRoom.id, targetUserId),
-      ]);
-
-      return existingRoom;
-    }
-
-    const room = await roomRepository.create({
+    const dmKey = createDirectMessageKey(currentUserId, targetUserId);
+    const room = await roomRepository.createDirectRoom({
       name: `${currentUserId}:${targetUserId}`,
-      type: "dm",
+      dmKey,
       createdBy: currentUserId,
     });
+
+    if (!room) {
+      throw new Error("Unable to create or retrieve direct room")
+    }
 
     await Promise.all([
       ensureActiveMembership(room.id, currentUserId),

@@ -33,7 +33,7 @@ export const messages = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [
-    index("messages_room_id_created_at_idx").on(table.roomId, table.createdAt),
+    index("messages_room_id_created_at_id_idx").on(table.roomId, table.createdAt, table.id),
     index("messages_sender_user_id_idx").on(table.senderUserId),
     check(
       "messages_sender_user_check",
