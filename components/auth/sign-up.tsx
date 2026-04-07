@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRightIcon, UserPlusIcon } from "@phosphor-icons/react";
+import {
+  EyeClosedIcon,
+  EyeIcon,
+  UserPlusIcon,
+} from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/lib/auth/useAuth";
@@ -27,6 +31,8 @@ export const SignUpForm = () => {
   const router = useRouter();
   const { signUpWithEmail, signInWithGoogle } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGooglePending, startGoogleTransition] = useTransition();
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
@@ -35,6 +41,7 @@ export const SignUpForm = () => {
       username: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
@@ -73,11 +80,11 @@ export const SignUpForm = () => {
       <div className="absolute -right-10 top-24 h-64 w-64 rounded-full bg-[rgba(107,159,255,0.18)] blur-3xl dark:bg-[rgba(89,120,203,0.16)]" />
       <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[rgba(255,179,112,0.16)] blur-3xl dark:bg-[rgba(255,173,82,0.08)]" />
 
-      <div className="absolute right-4 top-4 z-10">
+      <div className="absolute right-4 top-4 z-30">
         <ThemeToggler />
       </div>
 
-      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[1fr_1fr]">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-6 pt-14 lg:grid-cols-[1fr_1fr] lg:pt-0">
         <section className="hidden rounded-[2.2rem] border border-white/55 bg-white/60 p-8 shadow-[0_25px_80px_rgba(66,91,131,0.12)] backdrop-blur lg:block dark:border-white/10 dark:bg-white/5 dark:shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
           <div className="max-w-xl space-y-10">
             <div className="flex items-center gap-4">
@@ -85,15 +92,12 @@ export const SignUpForm = () => {
                 <Image
                   src={siteConfig.logo}
                   alt="Kochat logo"
-                  width={34}
-                  height={34}
+                  width={48}
+                  height={48}
                   className="size-8 object-contain"
                 />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.34em] text-muted-foreground">
-                  Private by default
-                </p>
                 <h1 className="text-3xl font-semibold tracking-tight">
                   {siteConfig.name}
                 </h1>
@@ -102,12 +106,11 @@ export const SignUpForm = () => {
 
             <div className="space-y-4">
               <p className="max-w-lg text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-balance">
-                Build a calm workspace before the first message is even sent.
+                Set up your identity once and start talking right away.
               </p>
               <p className="max-w-lg text-base leading-7 text-muted-foreground">
-                Sign up with your own identity, claim a clean username, then
-                start secure direct conversations or create group rooms with
-                controlled access.
+                Claim your username, keep your direct conversations private, and create secure
+                rooms for the people you actually work with.
               </p>
             </div>
 
@@ -147,9 +150,6 @@ export const SignUpForm = () => {
                 />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-                  Join workspace
-                </p>
                 <p className="text-xl font-semibold">{siteConfig.name}</p>
               </div>
             </div>
@@ -166,70 +166,108 @@ export const SignUpForm = () => {
           </CardHeader>
           <CardContent className="space-y-5 px-7 pb-7">
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="name">Full name</Label>
-                <Input
-                  id="name"
-                  placeholder="Ada Lovelace"
-                  className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
-                  {...form.register("name")}
-                />
-                {form.formState.errors.name ? (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.name.message}
-                  </p>
-                ) : null}
-              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Your full name"
+                    className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
+                    {...form.register("name")}
+                  />
+                  {form.formState.errors.name ? (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.name.message}
+                    </p>
+                  ) : null}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="ada_lovelace"
-                  className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
-                  {...form.register("username")}
-                />
-                {form.formState.errors.username ? (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.username.message}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    People can find you by this username or your email.
-                  </p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="Choose a username"
+                    className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
+                    {...form.register("username")}
+                  />
+                  {form.formState.errors.username ? (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.username.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      People can find you by this username or your email.
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
-                  {...form.register("email")}
-                />
-                {form.formState.errors.email ? (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.email.message}
-                  </p>
-                ) : null}
-              </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email address"
+                    className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
+                    {...form.register("email")}
+                  />
+                  {form.formState.errors.email ? (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.email.message}
+                    </p>
+                  ) : null}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Create a strong password"
-                  className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
-                  {...form.register("password")}
-                />
-                {form.formState.errors.password ? (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.password.message}
-                  </p>
-                ) : null}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 pr-12 dark:border-white/10 dark:bg-white/5"
+                      {...form.register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+                    </button>
+                  </div>
+                  {form.formState.errors.password ? (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.password.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 pr-12 dark:border-white/10 dark:bg-white/5"
+                      {...form.register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((current) => !current)}
+                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+                    </button>
+                  </div>
+                  {form.formState.errors.confirmPassword ? (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.confirmPassword.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               {errorMessage ? (
@@ -267,7 +305,7 @@ export const SignUpForm = () => {
               disabled={isGooglePending}
             >
               <GoogleIcon className="size-[18px]" />
-              {isGooglePending ? "Redirecting..." : "Google"}
+              {isGooglePending ? "Redirecting..." : "Sign in with Google"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
@@ -279,23 +317,6 @@ export const SignUpForm = () => {
                 Sign in
               </Link>
             </p>
-
-            <div className="rounded-[1.6rem] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(244,247,255,0.9)_100%)] p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.03)_100%)]">
-              <p className="font-medium text-foreground">
-                What happens after sign up?
-              </p>
-              <p className="mt-1">
-                We create your account, bootstrap your profile, and land you in
-                the workspace so you can start a direct chat or create a room
-                immediately.
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-foreground">
-                <ArrowRightIcon size={16} weight="bold" />
-                <span>
-                  Account created {"->"} Profile ready {"->"} Workspace
-                </span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

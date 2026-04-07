@@ -32,7 +32,8 @@ export const useAuth = () => {
     isLoading: sessionQuery.isPending,
     isAuthenticated: Boolean(user && session),
     signInWithEmail: (values: SignInValues) => authClient.signIn.email(values),
-    signUpWithEmail: (values: SignUpValues) => authClient.signUp.email(values),
+    signUpWithEmail: ({ confirmPassword: _confirmPassword, ...values }: SignUpValues) =>
+      authClient.signUp.email(values),
     signInWithGoogle: () =>
       authClient.signIn.social({
         provider: "google",

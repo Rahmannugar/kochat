@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUpRightIcon, SignInIcon } from "@phosphor-icons/react";
+import {
+  EyeClosedIcon,
+  EyeIcon,
+  SignInIcon,
+} from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/lib/auth/useAuth";
@@ -27,6 +31,7 @@ export const SignInForm = () => {
   const router = useRouter();
   const { signInWithEmail, signInWithGoogle } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isGooglePending, startGoogleTransition] = useTransition();
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
@@ -69,11 +74,11 @@ export const SignInForm = () => {
       <div className="absolute -left-16 top-24 h-56 w-56 rounded-full bg-[rgba(255,200,120,0.18)] blur-3xl dark:bg-[rgba(255,193,94,0.08)]" />
       <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-[rgba(100,164,255,0.16)] blur-3xl dark:bg-[rgba(85,123,196,0.14)]" />
 
-      <div className="absolute right-4 top-4 z-10">
+      <div className="absolute right-4 top-4 z-30">
         <ThemeToggler />
       </div>
 
-      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-6 pt-14 lg:grid-cols-[1.05fr_0.95fr] lg:pt-0">
         <section className="hidden rounded-[2.2rem] border border-white/55 bg-white/60 p-8 shadow-[0_25px_80px_rgba(66,91,131,0.12)] backdrop-blur lg:block dark:border-white/10 dark:bg-white/5 dark:shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
           <div className="max-w-xl space-y-10">
             <div className="flex items-center gap-4">
@@ -87,37 +92,25 @@ export const SignInForm = () => {
                 />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.34em] text-muted-foreground">
-                  Team Workspace
-                </p>
                 <h1 className="text-3xl font-semibold tracking-tight">
                   {siteConfig.name}
                 </h1>
               </div>
             </div>
 
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/75 px-4 py-2 text-sm text-foreground shadow-sm dark:border-white/10 dark:bg-white/10">
-                <ArrowUpRightIcon size={16} weight="bold" />
-                Realtime rooms, direct messages, AI help, and voice in one flow
-              </div>
-
-              <div className="space-y-4">
-                <p className="max-w-lg text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-balance">
-                  Work with people first. Pull in AI only when the moment needs
-                  it.
-                </p>
-                <p className="max-w-lg text-base leading-7 text-muted-foreground">
-                  Kochat is designed like a real workspace, not a chatbot
-                  wrapper. Conversations stay human by default, then AI joins in
-                  context when someone asks for help.
-                </p>
-              </div>
+            <div className="space-y-4">
+              <p className="max-w-lg text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-balance">
+                Keep conversations human. Bring AI in only when it helps.
+              </p>
+              <p className="max-w-lg text-base leading-7 text-muted-foreground">
+                Kochat gives teams one place for direct messages, private group rooms, voice notes,
+                and in-thread AI help without making the whole product feel like a bot.
+              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[1.6rem] border border-black/5 bg-white/70 p-4 dark:border-white/10 dark:bg-white/6">
-                <p className="text-sm font-medium">Rooms</p>
+                <p className="text-sm font-medium">Group rooms</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Create secure group rooms with shareable codes.
                 </p>
@@ -151,9 +144,6 @@ export const SignInForm = () => {
                 />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-                  Workspace
-                </p>
                 <p className="text-xl font-semibold">{siteConfig.name}</p>
               </div>
             </div>
@@ -175,7 +165,7 @@ export const SignInForm = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@company.com"
+                  placeholder="Email address"
                   className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
                   {...form.register("email")}
                 />
@@ -188,13 +178,23 @@ export const SignInForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 dark:border-white/10 dark:bg-white/5"
-                  {...form.register("password")}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    className="h-12 rounded-2xl border-black/8 bg-white/75 px-4 pr-12 dark:border-white/10 dark:bg-white/5"
+                    {...form.register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+                  </button>
+                </div>
                 {form.formState.errors.password ? (
                   <p className="text-sm text-destructive">
                     {form.formState.errors.password.message}
@@ -235,7 +235,7 @@ export const SignInForm = () => {
               disabled={isGooglePending}
             >
               <GoogleIcon className="size-[18px]" />
-              {isGooglePending ? "Redirecting..." : "Google"}
+              {isGooglePending ? "Redirecting..." : "Sign in with Google"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
