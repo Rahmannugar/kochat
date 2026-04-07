@@ -18,6 +18,7 @@ const DashboardPage = async () => {
   const bootstrap = await authService.bootstrapWorkspaceForUser({
     id: session.user.id,
     name: session.user.name,
+    email: session.user.email,
     image: session.user.image,
   })
 
@@ -59,7 +60,8 @@ const DashboardPage = async () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>Profile ensured for: {bootstrap.profile.displayName}</p>
+                <p>User ensured for: {bootstrap.user.name}</p>
+                <p>Username ensured for: {bootstrap.user.username}</p>
                 <p>Default room ensured: {bootstrap.generalRoom.name}</p>
                 <p>Membership ensured for user: {bootstrap.membership?.userId ?? session.user.id}</p>
               </CardContent>
