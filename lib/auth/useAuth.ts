@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useEffect } from "react"
 import type { SignInValues, SignUpValues } from "@/lib/auth/auth.schema"
 import { authClient } from "@/lib/auth/auth-client"
 import { useAuthStore } from "@/lib/auth/auth.store"
@@ -13,7 +13,7 @@ export const useAuth = () => {
   const setSession = useAuthStore((state) => state.setSession)
   const clearSession = useAuthStore((state) => state.clearSession)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (sessionQuery.isPending) {
       return
     }
@@ -37,6 +37,25 @@ export const useAuth = () => {
       authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
+      }),
+    sendEmailOtp: (email: string, type: "sign-in" | "email-verification" | "forget-password" = "sign-in") =>
+      authClient.emailOtp.sendVerificationOtp({
+        email,
+        type,
+      }),
+    signInWithEmailOtp: ({
+      email,
+      otp,
+      name,
+    }: {
+      email: string
+      otp: string
+      name?: string
+    }) =>
+      authClient.signIn.emailOtp({
+        email,
+        otp,
+        name,
       }),
     signOut: () => authClient.signOut(),
   }

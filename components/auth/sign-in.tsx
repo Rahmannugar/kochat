@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GoogleLogoIcon, SignInIcon } from "@phosphor-icons/react";
 import { useForm } from "react-hook-form";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuth";
 import { signInSchema, type SignInValues } from "@/lib/auth/auth.schema";
 import { siteConfig } from "@/lib/utils/siteConfig";
 import { Button } from "@/components/ui/button";
