@@ -3,7 +3,6 @@ import { db } from "@/lib/db"
 import { messages } from "@/lib/db/schema"
 
 type CreateMessageInput = {
-  id: string
   roomId: string
   sender: "human" | "ai"
   senderUserId?: string | null
@@ -23,7 +22,6 @@ export const messageRepository = {
   },
 
   create: async ({
-    id,
     roomId,
     sender,
     senderUserId,
@@ -37,7 +35,6 @@ export const messageRepository = {
     const [message] = await db
       .insert(messages)
       .values({
-        id,
         roomId,
         sender,
         senderUserId: senderUserId ?? null,

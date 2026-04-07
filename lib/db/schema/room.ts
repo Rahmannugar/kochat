@@ -6,6 +6,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { roomTypeEnum } from "./enums";
 import { roomMembers } from "./room-member";
@@ -15,7 +16,7 @@ import { user } from "./user";
 export const rooms = pgTable(
   "rooms",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     description: text("description"),
     type: roomTypeEnum("type").notNull(),

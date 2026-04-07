@@ -1,39 +1,85 @@
-import { roomRepository } from "@/lib/repositories/room.repository"
+import { userRepository } from "@/lib/repositories/user.repository";
+import { roomRepository } from "@/lib/repositories/room.repository";
 
-export const GENERAL_ROOM_CODE_PREFIX = "GR"
+const GROUP_ROOM_CODE_PREFIX = "GR";
+const createSecureCode = () =>
+  crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase();
 
-const createId = () => crypto.randomUUID()
-const createSecureCode = () => crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()
+const createGroupCode = () => `${GROUP_ROOM_CODE_PREFIX}-${createSecureCode()}`;
 
-export const roomService = {
-  ensureGeneralRoom: async () => {
-    const existingRoom = await roomRepository.findGeneralRoom()
+const getExistingDirectRoom = async (
+  currentUserId: string,
+  targetUserId: string,
+) => {
+  const candidateRooms = await roomRepository.listDirectRoomCandidatesForUsers([
+    currentUserId,
+    targetUserId,
+  ]);
 
-    if (existingRoom) {
-      return existingRoom
-    }
+  return (
+    candidateRooms.find((room) => {
+      if (room.type !== "dm" || room.members.length !== 2) {
+        return false;
+      }
 
-    return roomRepository.createRoom({
-      id: createId(),
-      name: "General",
-      description: "Default workspace room for every newly registered member",
-      type: "general",
-    })
-  },
+      const memberIds = room.members.map((member) => member.userId);
 
-  ensureMembership: async (roomId: string, userId: string, role: "owner" | "member" = "member") => {
-    const existingMembership = await roomRepository.findMembership(roomId, userId)
+      return (
+        memberIds.includes(currentUserId) && memberIds.includes(targetUserId)
+      );
+    }) ?? null
+  );
+};
 
-    if (existingMembership) {
-      return existingMembership
-    }
+const ensureActiveMembership = async (
+  roomId: string,
+  userId: string,
+  role: "owner" | "member" = "member",
+) => {
+  const existingMembership = await roomRepository.findMembership(
+    roomId,
+    userId,
+  );
 
-    return roomRepository.addMember({
-      id: createId(),
+  if (!existingMembership) {
+    return roomRepository.addMembership({
       roomId,
       userId,
       role,
-    })
+    });
+  }
+
+  if (existingMembership.archivedAt) {
+    return roomRepository.updateMembership({
+      roomId,
+      userId,
+      archivedAt: null,
+      role,
+    });
+  }
+
+  return existingMembership;
+};
+
+export const roomService = {
+  listRoomsForUser: async (userId: string) => {
+    return roomRepository.listForUser(userId);
+  },
+
+  getRoomForUser: async (roomId: string, userId: string) => {
+    const membership = await roomRepository.findMembership(roomId, userId);
+
+    if (!membership || membership.archivedAt) {
+      throw new Error("Room not found for this user");
+    }
+
+    const room = await roomRepository.findById(roomId);
+
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    return room;
   },
 
   createGroupRoom: async ({
@@ -41,64 +87,95 @@ export const roomService = {
     description,
     createdBy,
   }: {
-    name: string
-    description?: string
-    createdBy: string
+    name: string;
+    description?: string;
+    createdBy: string;
   }) => {
-    const code = `${GENERAL_ROOM_CODE_PREFIX}-${createSecureCode()}`
+    const creator = await userRepository.findById(createdBy);
 
-    const room = await roomRepository.createRoom({
-      id: createId(),
-      name,
-      description,
+    if (!creator) {
+      throw new Error("User not found");
+    }
+
+    const room = await roomRepository.create({
+      name: name.trim(),
+      description: description?.trim(),
       type: "group",
-      code,
+      code: createGroupCode(),
       createdBy,
-    })
+    });
 
-    await roomRepository.addMember({
-      id: createId(),
-      roomId: room.id,
-      userId: createdBy,
-      role: "owner",
-    })
+    await ensureActiveMembership(room.id, createdBy, "owner");
 
-    return room
+    return room;
   },
 
-  findOrCreateDirectRoom: async (currentUserId: string, targetUserId: string) => {
-    const existingRoom = await roomRepository.findDirectRoomForUsers([currentUserId, targetUserId])
+  joinGroupRoomByCode: async (code: string, userId: string) => {
+    const normalizedCode = code.trim().toUpperCase();
+    const room = await roomRepository.findByCode(normalizedCode);
+
+    if (!room || room.type !== "group") {
+      throw new Error("Group room not found");
+    }
+
+    await ensureActiveMembership(room.id, userId);
+
+    return room;
+  },
+
+  archiveRoomForUser: async (roomId: string, userId: string) => {
+    const membership = await roomRepository.findMembership(roomId, userId);
+
+    if (!membership) {
+      throw new Error("Room membership not found");
+    }
+
+    return roomRepository.updateMembership({
+      roomId,
+      userId,
+      archivedAt: new Date(),
+    });
+  },
+
+  findOrCreateDirectRoom: async (
+    currentUserId: string,
+    targetUserId: string,
+  ) => {
+    if (currentUserId === targetUserId) {
+      throw new Error("You cannot start a direct chat with yourself");
+    }
+
+    const targetUser = await userRepository.findById(targetUserId);
+
+    if (!targetUser) {
+      throw new Error("Target user was not found");
+    }
+
+    const existingRoom = await getExistingDirectRoom(
+      currentUserId,
+      targetUserId,
+    );
 
     if (existingRoom) {
       await Promise.all([
-        roomRepository.restoreMembership(existingRoom.id, currentUserId),
-        roomRepository.restoreMembership(existingRoom.id, targetUserId),
-      ])
+        ensureActiveMembership(existingRoom.id, currentUserId),
+        ensureActiveMembership(existingRoom.id, targetUserId),
+      ]);
 
-      return existingRoom
+      return existingRoom;
     }
 
-    const room = await roomRepository.createRoom({
-      id: createId(),
-      name: "Direct Message",
+    const room = await roomRepository.create({
+      name: `${currentUserId}:${targetUserId}`,
       type: "dm",
       createdBy: currentUserId,
-    })
+    });
 
     await Promise.all([
-      roomRepository.addMember({
-        id: createId(),
-        roomId: room.id,
-        userId: currentUserId,
-        role: "owner",
-      }),
-      roomRepository.addMember({
-        id: createId(),
-        roomId: room.id,
-        userId: targetUserId,
-      }),
-    ])
+      ensureActiveMembership(room.id, currentUserId),
+      ensureActiveMembership(room.id, targetUserId),
+    ]);
 
-    return room
+    return room;
   },
-}
+};

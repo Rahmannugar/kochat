@@ -3,7 +3,6 @@ import { db } from "@/lib/db"
 import { roomMembers, rooms } from "@/lib/db/schema"
 
 type CreateRoomInput = {
-  id: string
   name: string
   description?: string
   type: "dm" | "group"
@@ -12,7 +11,6 @@ type CreateRoomInput = {
 }
 
 type AddMembershipInput = {
-  id: string
   roomId: string
   userId: string
   role?: "owner" | "member"
@@ -38,11 +36,10 @@ export const roomRepository = {
     })
   },
 
-  create: async ({ id, name, description, type, code, createdBy }: CreateRoomInput) => {
+  create: async ({ name, description, type, code, createdBy }: CreateRoomInput) => {
     const [room] = await db
       .insert(rooms)
       .values({
-        id,
         name,
         description,
         type,
@@ -71,7 +68,6 @@ export const roomRepository = {
   },
 
   addMembership: async ({
-    id,
     roomId,
     userId,
     role = "member",
@@ -79,7 +75,6 @@ export const roomRepository = {
     const [membership] = await db
       .insert(roomMembers)
       .values({
-        id,
         roomId,
         userId,
         role,

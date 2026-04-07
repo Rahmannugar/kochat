@@ -15,10 +15,9 @@ const DashboardPage = async () => {
     redirect("/sign-in")
   }
 
-  const bootstrap = await authService.bootstrapWorkspaceForUser({
+  const bootstrap = await authService.bootstrapUserAccount({
     id: session.user.id,
     name: session.user.name,
-    email: session.user.email,
     image: session.user.image,
   })
 
@@ -61,9 +60,9 @@ const DashboardPage = async () => {
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <p>User ensured for: {bootstrap.user.name}</p>
-                <p>Username ensured for: {bootstrap.user.username}</p>
-                <p>Default room ensured: {bootstrap.generalRoom.name}</p>
-                <p>Membership ensured for user: {bootstrap.membership?.userId ?? session.user.id}</p>
+                <p>Username currently set to: {bootstrap.user.username ?? "not set yet"}</p>
+                <p>Profile bootstrap complete for user: {bootstrap.user.id}</p>
+                <p>Next backend slice is room and message APIs.</p>
               </CardContent>
             </Card>
 

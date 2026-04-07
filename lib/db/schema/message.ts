@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { messageSenderEnum, messageTypeEnum } from "./enums";
 import { rooms } from "./room";
@@ -14,8 +15,8 @@ import { user } from "./user";
 export const messages = pgTable(
   "messages",
   {
-    id: text("id").primaryKey(),
-    roomId: text("room_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    roomId: uuid("room_id")
       .notNull()
       .references(() => rooms.id, { onDelete: "cascade" }),
     sender: messageSenderEnum("sender").notNull().default("human"),

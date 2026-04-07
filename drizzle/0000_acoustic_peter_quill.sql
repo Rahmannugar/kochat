@@ -54,7 +54,7 @@ CREATE TABLE "verification" (
 );
 --> statement-breakpoint
 CREATE TABLE "rooms" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
 	"type" "room_type" NOT NULL,
@@ -66,8 +66,8 @@ CREATE TABLE "rooms" (
 );
 --> statement-breakpoint
 CREATE TABLE "room_members" (
-	"id" text PRIMARY KEY NOT NULL,
-	"room_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"room_id" uuid NOT NULL,
 	"user_id" text NOT NULL,
 	"role" "room_member_role" DEFAULT 'member' NOT NULL,
 	"archived_at" timestamp,
@@ -75,8 +75,8 @@ CREATE TABLE "room_members" (
 );
 --> statement-breakpoint
 CREATE TABLE "messages" (
-	"id" text PRIMARY KEY NOT NULL,
-	"room_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"room_id" uuid NOT NULL,
 	"sender" "message_sender" DEFAULT 'human' NOT NULL,
 	"sender_user_id" text,
 	"content" text NOT NULL,

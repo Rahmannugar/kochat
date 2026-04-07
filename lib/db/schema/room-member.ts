@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { roomMemberRoleEnum } from "./enums";
 import { rooms } from "./room";
@@ -13,8 +14,8 @@ import { user } from "./user";
 export const roomMembers = pgTable(
   "room_members",
   {
-    id: text("id").primaryKey(),
-    roomId: text("room_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    roomId: uuid("room_id")
       .notNull()
       .references(() => rooms.id, { onDelete: "cascade" }),
     userId: text("user_id")
