@@ -21,6 +21,15 @@ export const messageRepository = {
     })
   },
 
+  findDetailedById: async (messageId: string) => {
+    return db.query.messages.findFirst({
+      where: eq(messages.id, messageId),
+      with: {
+        senderUser: true,
+      },
+    })
+  },
+
   create: async ({
     roomId,
     sender,

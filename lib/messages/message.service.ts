@@ -1,5 +1,6 @@
 import { messageRepository } from "@/lib/messages/message.repository";
 import { roomRepository } from "@/lib/rooms/room.repository";
+import { roomEvents } from "@/lib/realtime/room-events";
 
 type CreateHumanMessageInput = {
   roomId: string;
@@ -89,7 +90,7 @@ export const messageService = {
   }: CreateHumanMessageInput) => {
     await assertActiveRoomMembership(roomId, senderUserId);
 
-    return messageRepository.create({
+    const createdMessage = await messageRepository.create({
       roomId,
       sender: "human",
       senderUserId,
@@ -100,6 +101,22 @@ export const messageService = {
       audioTranscript,
       metadata,
     });
+
+    const message = await messageRepository.findDetailedById(createdMessage.id);
+
+    if (!message) {
+      throw new Error("Message could not be loaded after creation");
+    }
+
+    await roomEvents.publish({
+      roomId,
+      type: "message.created",
+      payload: {
+        message,
+      },
+    });
+
+    return message;
   },
 
   createAiMessage: async ({
@@ -114,7 +131,7 @@ export const messageService = {
   }: CreateAiMessageInput) => {
     await assertActiveRoomMembership(roomId, actorUserId);
 
-    return messageRepository.create({
+    const createdMessage = await messageRepository.create({
       roomId,
       sender: "ai",
       content,
@@ -124,5 +141,21 @@ export const messageService = {
       audioTranscript,
       metadata,
     });
+
+    const message = await messageRepository.findDetailedById(createdMessage.id);
+
+    if (!message) {
+      throw new Error("AI message could not be loaded after creation");
+    }
+
+    await roomEvents.publish({
+      roomId,
+      type: "message.created",
+      payload: {
+        message,
+      },
+    });
+
+    return message;
   },
 };

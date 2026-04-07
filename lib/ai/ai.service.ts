@@ -2,6 +2,7 @@ import { AI_SYSTEM_PROMPT } from "@/lib/ai/ai.config";
 import { getAiClient } from "@/lib/ai/ai-client";
 import type { AiPromptMessage } from "@/lib/ai/ai.types";
 import { messageRepository } from "@/lib/messages/message.repository";
+import { roomEvents } from "@/lib/realtime/room-events";
 import { roomRepository } from "@/lib/rooms/room.repository";
 import { storageService } from "@/lib/storage/storage.service";
 
@@ -143,7 +144,7 @@ export const aiService = {
           throw new Error("AI returned an empty response");
         }
 
-        const message = await messageRepository.create({
+        const createdMessage = await messageRepository.create({
           roomId,
           sender: "ai",
           content: fullText.trim(),
@@ -152,6 +153,20 @@ export const aiService = {
             triggerMessageId,
           },
         });
+
+        const message = await messageRepository.findDetailedById(createdMessage.id)
+
+        if (!message) {
+          throw new Error("AI message could not be loaded after persistence")
+        }
+
+        await roomEvents.publish({
+          roomId,
+          type: "message.created",
+          payload: {
+            message,
+          },
+        })
 
         resolveMessage?.(message);
       } catch (streamError) {
