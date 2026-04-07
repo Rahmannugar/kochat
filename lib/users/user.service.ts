@@ -1,4 +1,4 @@
-import { userRepository } from "@/lib/repositories/user.repository";
+import { userRepository } from "@/lib/users/user.repository";
 
 type UpdateUserProfileInput = {
   userId: string;
@@ -81,7 +81,9 @@ export const userService = {
       throw new Error("User not found");
     }
 
-    const normalizedUsername = username ? normalizeUsername(username) : undefined;
+    const normalizedUsername = username
+      ? normalizeUsername(username)
+      : undefined;
 
     if (normalizedUsername) {
       const existingUser =
@@ -105,8 +107,8 @@ export const userService = {
     userId,
     image,
   }: {
-    userId: string
-    image: string | null
+    userId: string;
+    image: string | null;
   }) => {
     const currentUser = await userRepository.findById(userId);
 

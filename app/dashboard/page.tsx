@@ -5,7 +5,7 @@ import { ThemeToggler } from "@/components/shared/ThemeToggler"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getServerSession } from "@/lib/auth/auth"
 import { AuthGuard } from "@/components/auth/auth-guard"
-import { authService } from "@/lib/services/auth.service"
+import { authService } from "@/lib/auth/auth.service"
 import { siteConfig } from "@/lib/utils/siteConfig"
 
 const DashboardPage = async () => {

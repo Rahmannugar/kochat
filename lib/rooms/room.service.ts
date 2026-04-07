@@ -1,5 +1,5 @@
-import { userRepository } from "@/lib/repositories/user.repository";
-import { roomRepository } from "@/lib/repositories/room.repository";
+import { userRepository } from "@/lib/users/user.repository";
+import { roomRepository } from "@/lib/rooms/room.repository";
 
 const GROUP_ROOM_CODE_PREFIX = "GR";
 const createSecureCode = () =>
@@ -136,7 +136,7 @@ export const roomService = {
     });
 
     if (!room) {
-      throw new Error("Unable to create or retrieve direct room")
+      throw new Error("Unable to create or retrieve direct room");
     }
 
     await Promise.all([

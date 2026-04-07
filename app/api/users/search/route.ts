@@ -1,20 +1,24 @@
-import { handleRouteError, success, requireSessionUser } from "@/lib/utils/http"
-import { userService } from "@/lib/services/user.service"
-import { userLookupSchema } from "@/lib/users/user.schema"
+import {
+  handleRouteError,
+  success,
+  requireSessionUser,
+} from "@/lib/utils/http";
+import { userService } from "@/lib/users/user.service";
+import { userLookupSchema } from "@/lib/users/user.schema";
 
 export const GET = async (request: Request) => {
   try {
-    await requireSessionUser()
+    await requireSessionUser();
 
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
     const { query } = userLookupSchema.parse({
       query: searchParams.get("query"),
-    })
+    });
 
-    const user = await userService.findUserByUsernameOrEmail(query)
+    const user = await userService.findUserByUsernameOrEmail(query);
 
-    return success(user)
+    return success(user);
   } catch (routeError) {
-    return handleRouteError(routeError)
+    return handleRouteError(routeError);
   }
-}
+};

@@ -1,17 +1,17 @@
-import { userRepository } from "@/lib/repositories/user.repository"
+import { userRepository } from "@/lib/users/user.repository";
 
 type BootstrapUserInput = {
-  id: string
-  name: string
-  image?: string | null
-}
+  id: string;
+  name: string;
+  image?: string | null;
+};
 
 export const authService = {
   bootstrapUserAccount: async ({ id, name, image }: BootstrapUserInput) => {
-    const currentUser = await userRepository.findById(id)
+    const currentUser = await userRepository.findById(id);
 
     if (!currentUser) {
-      throw new Error("Authenticated user record was not found")
+      throw new Error("Authenticated user record was not found");
     }
 
     const updatedUser = await userRepository.updateProfileFields({
@@ -19,20 +19,20 @@ export const authService = {
       name,
       image: image ?? null,
       bio: currentUser.bio,
-    })
+    });
 
     return {
       user: updatedUser,
-    }
+    };
   },
 
   requiresProfileCompletion: async (userId: string) => {
-    const currentUser = await userRepository.findById(userId)
+    const currentUser = await userRepository.findById(userId);
 
     if (!currentUser) {
-      throw new Error("Authenticated user record was not found")
+      throw new Error("Authenticated user record was not found");
     }
 
-    return !currentUser.username
+    return !currentUser.username;
   },
-}
+};
