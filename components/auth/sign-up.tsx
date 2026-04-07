@@ -188,22 +188,21 @@ export const SignUpForm = () => {
             </Link>
           </p>
 
-          <div className="rounded-[1.5rem] bg-muted/50 p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">
-              What happens after sign up?
-            </p>
-            <p className="mt-1">
-              We bootstrap your profile, ensure the default General room exists,
-              and make sure you are a member before you land in the dashboard.
-            </p>
-            <div className="mt-3 flex items-center gap-2 text-foreground">
-              <ArrowRightIcon size={16} weight="bold" />
-              <span>
-                Account created {"->"} General room membership ensured {"->"}{" "}
-                Dashboard
-              </span>
+            <div className="rounded-[1.5rem] bg-muted/50 p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">
+                What happens after sign up?
+              </p>
+              <p className="mt-1">
+                We bootstrap your profile and take you straight into the
+                workspace so you can start a direct chat or create a group room.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-foreground">
+                <ArrowRightIcon size={16} weight="bold" />
+                <span>
+                  Account created {"->"} Profile ready {"->"} Dashboard
+                </span>
+              </div>
             </div>
-          </div>
         </CardContent>
       </Card>
     </div>
