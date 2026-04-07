@@ -1,4 +1,5 @@
 import { roomIdParamsSchema } from "@/lib/rooms/room.schema"
+import { realtimeState } from "@/lib/realtime/realtime-state"
 import { roomService } from "@/lib/rooms/room.service"
 import { roomEvents } from "@/lib/realtime/room-events"
 import { error, requireSessionUser } from "@/lib/utils/http"
@@ -25,6 +26,32 @@ export const GET = async (request: Request, context: RouteContext) => {
         controller.enqueue(
           encoder.encode(
             `event: ready\ndata: ${JSON.stringify({ roomId })}\n\n`,
+          ),
+        )
+
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              roomId,
+              type: "presence.updated",
+              payload: {
+                activeUsers: realtimeState.getRoomSnapshot(roomId).activeUsers,
+              },
+              occurredAt: new Date().toISOString(),
+            })}\n\n`,
+          ),
+        )
+
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              roomId,
+              type: "typing.updated",
+              payload: {
+                typingUsers: realtimeState.getRoomSnapshot(roomId).typingUsers,
+              },
+              occurredAt: new Date().toISOString(),
+            })}\n\n`,
           ),
         )
 

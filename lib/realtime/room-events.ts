@@ -4,7 +4,6 @@ import { getServerEnv } from "@/lib/env/server"
 import { RoomEvent } from "@/lib/realtime/realtime.types"
 
 const ROOM_EVENTS_CHANNEL = "kochat_room_events"
-const HEARTBEAT_INTERVAL_MS = 25_000
 
 type RoomSubscriber = (event: RoomEvent) => void
 
