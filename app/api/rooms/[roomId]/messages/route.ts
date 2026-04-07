@@ -1,3 +1,4 @@
+import { aiService } from "@/lib/services/ai.service"
 import { handleRouteError, success, requireSessionUser } from "@/lib/utils/http"
 import { createMessageSchema, roomMessagesQuerySchema } from "@/lib/messages/message.schema"
 import { roomIdParamsSchema } from "@/lib/rooms/room.schema"
@@ -47,7 +48,13 @@ export const POST = async (request: Request, context: RouteContext) => {
       metadata: payload.metadata,
     })
 
-    return success(message, { status: 201 })
+    return success(
+      {
+        message,
+        invokesAi: aiService.shouldInvokeAssistant(message.content),
+      },
+      { status: 201 },
+    )
   } catch (routeError) {
     return handleRouteError(routeError)
   }

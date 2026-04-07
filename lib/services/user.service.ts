@@ -100,4 +100,26 @@ export const userService = {
       bio: bio?.trim() || null,
     });
   },
+
+  updateUserAvatar: async ({
+    userId,
+    image,
+  }: {
+    userId: string
+    image: string | null
+  }) => {
+    const currentUser = await userRepository.findById(userId);
+
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+
+    return userRepository.updateProfileFields({
+      userId,
+      name: currentUser.name,
+      image,
+      username: currentUser.username ?? undefined,
+      bio: currentUser.bio,
+    });
+  },
 };

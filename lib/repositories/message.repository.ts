@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, lt, or } from "drizzle-orm"
+import { and, desc, eq, ilike, lt, or } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { messages } from "@/lib/db/schema"
 
@@ -51,14 +51,16 @@ export const messageRepository = {
   },
 
   listRecentByRoomId: async (roomId: string, limit = 20) => {
-    return db.query.messages.findMany({
+    const rows = await db.query.messages.findMany({
       where: eq(messages.roomId, roomId),
       with: {
         senderUser: true,
       },
-      orderBy: asc(messages.createdAt),
+      orderBy: [desc(messages.createdAt), desc(messages.id)],
       limit,
     })
+
+    return rows.reverse()
   },
 
   listPageByRoomId: async ({
