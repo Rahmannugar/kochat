@@ -1,0 +1,43 @@
+"use client"
+
+import * as React from "react"
+import type { SignInValues, SignUpValues } from "@/lib/auth/auth.schema"
+import { authClient } from "@/lib/auth/auth-client"
+import { useAuthStore } from "@/lib/auth/auth.store"
+import type { AuthSession } from "@/lib/auth/auth.types"
+
+export const useAuth = () => {
+  const sessionQuery = authClient.useSession()
+  const user = useAuthStore((state) => state.user)
+  const session = useAuthStore((state) => state.session)
+  const setSession = useAuthStore((state) => state.setSession)
+  const clearSession = useAuthStore((state) => state.clearSession)
+
+  React.useEffect(() => {
+    if (sessionQuery.isPending) {
+      return
+    }
+
+    if (sessionQuery.data) {
+      setSession(sessionQuery.data as AuthSession)
+      return
+    }
+
+    clearSession()
+  }, [clearSession, sessionQuery.data, sessionQuery.isPending, setSession])
+
+  return {
+    session,
+    user,
+    isLoading: sessionQuery.isPending,
+    isAuthenticated: Boolean(user && session),
+    signInWithEmail: (values: SignInValues) => authClient.signIn.email(values),
+    signUpWithEmail: (values: SignUpValues) => authClient.signUp.email(values),
+    signInWithGoogle: () =>
+      authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      }),
+    signOut: () => authClient.signOut(),
+  }
+}

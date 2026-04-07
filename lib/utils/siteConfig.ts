@@ -2,6 +2,7 @@ export const siteConfig = {
   name: "Kochat",
   description:
     "A collaborative workspace chat app with real-time conversations and an on-demand AI assistant.",
+  logo: "/images/kochat-logo.png",
   openGraphImage: "/opengraph-image.png",
   openGraph: {
     siteName: "Kochat",
@@ -14,4 +15,4 @@ export const siteConfig = {
     description:
       "A collaborative workspace chat app with real-time conversations and an on-demand AI assistant.",
   },
-};
+} as const

@@ -7,6 +7,20 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [siteConfig.openGraphImage],
+    siteName: siteConfig.openGraph.siteName,
+    locale: siteConfig.openGraph.locale,
+    type: siteConfig.openGraph.type,
+  },
+  twitter: {
+    card: siteConfig.twitter.card,
+    title: siteConfig.twitter.title,
+    description: siteConfig.twitter.description,
+    images: [siteConfig.openGraphImage],
+  },
 }
 
 export default function RootLayout({

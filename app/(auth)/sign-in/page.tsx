@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation"
+import { SignInForm } from "@/components/auth/sign-in"
 import { getServerSession } from "@/lib/auth/auth"
 
-const Home = async () => {
+const SignInPage = async () => {
   const session = await getServerSession()
 
   if (session) {
     redirect("/dashboard")
   }
 
-  redirect("/sign-in")
+  return <SignInForm />
 }
 
-export default Home
+export default SignInPage

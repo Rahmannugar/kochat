@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Moon, Sun } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
-const ThemeToggler = () => {
+export const ThemeToggler = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
@@ -25,10 +25,10 @@ const ThemeToggler = () => {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? (
-        <Sun size={18} weight="duotone" />
+        <SunIcon size={18} weight="duotone" />
       ) : (
-        <Moon size={18} weight="duotone" />
+        <MoonIcon size={18} weight="duotone" />
       )}
     </Button>
   );
-};
+}

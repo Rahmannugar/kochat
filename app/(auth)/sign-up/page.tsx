@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation"
+import { SignUpForm } from "@/components/auth/sign-up"
 import { getServerSession } from "@/lib/auth/auth"
 
-const Home = async () => {
+const SignUpPage = async () => {
   const session = await getServerSession()
 
   if (session) {
     redirect("/dashboard")
   }
 
-  redirect("/sign-in")
+  return <SignUpForm />
 }
 
-export default Home
+export default SignUpPage
