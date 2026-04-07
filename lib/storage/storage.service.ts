@@ -31,41 +31,13 @@ type UploadBufferAssetInput = {
   upsert?: boolean
 }
 
-const ensuredBuckets = new Set<string>()
-
 const sanitizeFileName = (fileName: string) => {
   const normalized = fileName.toLowerCase().replace(/[^a-z0-9._-]/g, "-")
 
   return normalized || "file"
 }
 
-const ensureBucket = async (bucket: string, isPublic = false) => {
-  if (ensuredBuckets.has(bucket)) {
-    return
-  }
-
-  const supabase = getSupabaseAdmin()
-  const { data: buckets, error: listError } = await supabase.storage.listBuckets()
-
-  if (listError) {
-    throw new HttpError(500, "Failed to inspect storage buckets")
-  }
-
-  const exists = buckets.some((existingBucket) => existingBucket.name === bucket)
-
-  if (!exists) {
-    const { error: createError } = await supabase.storage.createBucket(bucket, {
-      public: isPublic,
-      fileSizeLimit: undefined,
-    })
-
-    if (createError && !createError.message.toLowerCase().includes("already exists")) {
-      throw new HttpError(500, `Failed to create storage bucket "${bucket}"`)
-    }
-  }
-
-  ensuredBuckets.add(bucket)
-}
+const REQUIRED_BUCKETS = [AVATAR_BUCKET, CHAT_IMAGE_BUCKET, CHAT_AUDIO_BUCKET] as const
 
 const validateFile = ({
   file,
@@ -95,7 +67,6 @@ const uploadAsset = async ({
   upsert = false,
 }: UploadAssetInput) => {
   validateFile({ file, maxSizeBytes, allowedMimeTypes })
-  await ensureBucket(bucket, true)
 
   const supabase = getSupabaseAdmin()
   const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
@@ -105,6 +76,10 @@ const uploadAsset = async ({
   })
 
   if (uploadError) {
+    if (uploadError.message.toLowerCase().includes("bucket")) {
+      throw new HttpError(500, `Storage bucket "${bucket}" is not provisioned`)
+    }
+
     throw new HttpError(500, "Failed to upload file")
   }
 
@@ -127,8 +102,6 @@ const uploadBufferAsset = async ({
   cacheControl = "3600",
   upsert = false,
 }: UploadBufferAssetInput) => {
-  await ensureBucket(bucket, true)
-
   const supabase = getSupabaseAdmin()
   const { error: uploadError } = await supabase.storage.from(bucket).upload(path, buffer, {
     contentType,
@@ -137,6 +110,10 @@ const uploadBufferAsset = async ({
   })
 
   if (uploadError) {
+    if (uploadError.message.toLowerCase().includes("bucket")) {
+      throw new HttpError(500, `Storage bucket "${bucket}" is not provisioned`)
+    }
+
     throw new HttpError(500, "Failed to upload generated asset")
   }
 
@@ -178,6 +155,33 @@ const fileNameFromMimeType = (mimeType: string) => {
 }
 
 export const storageService = {
+  getRequiredBuckets: () => [...REQUIRED_BUCKETS],
+
+  provisionBuckets: async () => {
+    const supabase = getSupabaseAdmin()
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+
+    if (listError) {
+      throw new HttpError(500, "Failed to inspect storage buckets")
+    }
+
+    const existingBucketNames = new Set(buckets.map((bucket) => bucket.name))
+
+    for (const bucket of REQUIRED_BUCKETS) {
+      if (existingBucketNames.has(bucket)) {
+        continue
+      }
+
+      const { error: createError } = await supabase.storage.createBucket(bucket, {
+        public: true,
+      })
+
+      if (createError && !createError.message.toLowerCase().includes("already exists")) {
+        throw new HttpError(500, `Failed to create storage bucket "${bucket}"`)
+      }
+    }
+  },
+
   uploadAvatar: async (userId: string, file: File) => {
     return uploadAsset({
       bucket: AVATAR_BUCKET,

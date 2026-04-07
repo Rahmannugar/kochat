@@ -17,4 +17,5 @@ export const synthesizeSpeechSchema = z.object({
     .min(1, "Text is required")
     .max(5000, "Text is too long"),
   voiceName: z.string().trim().min(1, "Voice name is required").optional(),
+  store: z.boolean().optional().default(false),
 });

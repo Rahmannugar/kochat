@@ -18,12 +18,19 @@ export const POST = async (request: Request, context: RouteContext) => {
     const sessionUser = await requireSessionUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const payload = synthesizeSpeechSchema.parse(await request.json());
-    const audio = await aiService.synthesizeSpeech({
-      actorUserId: sessionUser.id,
-      roomId,
-      text: payload.text,
-      voiceName: payload.voiceName,
-    });
+    const audio = payload.store
+      ? await aiService.synthesizeAndStoreSpeech({
+          actorUserId: sessionUser.id,
+          roomId,
+          text: payload.text,
+          voiceName: payload.voiceName,
+        })
+      : await aiService.synthesizeSpeech({
+          actorUserId: sessionUser.id,
+          roomId,
+          text: payload.text,
+          voiceName: payload.voiceName,
+        });
 
     return success(audio);
   } catch (routeError) {
