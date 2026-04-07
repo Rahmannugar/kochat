@@ -1,84 +1,4 @@
-import { and, eq } from "drizzle-orm"
-import { db } from "@/lib/db"
-import { roomMembers, rooms } from "@/lib/db/schema"
-
-type CreateRoomInput = {
-  id: string
-  slug: string
-  name: string
-  description?: string
-  kind?: "channel" | "group" | "dm"
-  isDefault?: boolean
-  createdBy?: string
-}
-
-type AddMemberInput = {
-  id: string
-  roomId: string
-  userId: string
-  role?: "owner" | "member"
-}
-
-export const roomRepository = {
-  findBySlug: async (slug: string) => {
-    return db.query.rooms.findFirst({
-      where: eq(rooms.slug, slug),
-    })
-  },
-
-  createRoom: async ({
-    id,
-    slug,
-    name,
-    description,
-    kind = "channel",
-    isDefault = false,
-    createdBy,
-  }: CreateRoomInput) => {
-    const [room] = await db
-      .insert(rooms)
-      .values({
-        id,
-        slug,
-        name,
-        description,
-        kind,
-        isDefault,
-        createdBy,
-      })
-      .returning()
-
-    return room
-  },
-
-  findMembership: async (roomId: string, userId: string) => {
-    return db.query.roomMembers.findFirst({
-      where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
-    })
-  },
-
-  addMember: async ({ id, roomId, userId, role = "member" }: AddMemberInput) => {
-    const [member] = await db
-      .insert(roomMembers)
-      .values({
-        id,
-        roomId,
-        userId,
-        role,
-      })
-      .onConflictDoNothing()
-      .returning()
-
-    if (member) {
-      return member
-    }
-
-    return db.query.roomMembers.findFirst({
-      where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
-    })
-  },
-}
-import { and, eq } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { roomMembers, rooms } from "@/lib/db/schema"
 
@@ -86,39 +6,39 @@ type CreateRoomInput = {
   id: string
   name: string
   description?: string
-  type?: "general" | "group" | "dm"
+  type: "dm" | "group"
   code?: string | null
   createdBy?: string
 }
 
-type AddMemberInput = {
+type AddMembershipInput = {
   id: string
   roomId: string
   userId: string
   role?: "owner" | "member"
 }
 
+type UpdateMembershipInput = {
+  roomId: string
+  userId: string
+  archivedAt?: Date | null
+  role?: "owner" | "member"
+}
+
 export const roomRepository = {
+  findById: async (roomId: string) => {
+    return db.query.rooms.findFirst({
+      where: eq(rooms.id, roomId),
+    })
+  },
+
   findByCode: async (code: string) => {
     return db.query.rooms.findFirst({
       where: eq(rooms.code, code),
     })
   },
 
-  findGeneralRoom: async () => {
-    return db.query.rooms.findFirst({
-      where: eq(rooms.type, "general"),
-    })
-  },
-
-  createRoom: async ({
-    id,
-    name,
-    description,
-    type = "group",
-    code,
-    createdBy,
-  }: CreateRoomInput) => {
+  create: async ({ id, name, description, type, code, createdBy }: CreateRoomInput) => {
     const [room] = await db
       .insert(rooms)
       .values({
@@ -134,14 +54,29 @@ export const roomRepository = {
     return room
   },
 
+  listForUser: async (userId: string) => {
+    return db.query.roomMembers.findMany({
+      where: and(eq(roomMembers.userId, userId), isNull(roomMembers.archivedAt)),
+      with: {
+        room: true,
+      },
+      orderBy: desc(roomMembers.joinedAt),
+    })
+  },
+
   findMembership: async (roomId: string, userId: string) => {
     return db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
     })
   },
 
-  addMember: async ({ id, roomId, userId, role = "member" }: AddMemberInput) => {
-    const [member] = await db
+  addMembership: async ({
+    id,
+    roomId,
+    userId,
+    role = "member",
+  }: AddMembershipInput) => {
+    const [membership] = await db
       .insert(roomMembers)
       .values({
         id,
@@ -152,8 +87,8 @@ export const roomRepository = {
       .onConflictDoNothing()
       .returning()
 
-    if (member) {
-      return member
+    if (membership) {
+      return membership
     }
 
     return db.query.roomMembers.findFirst({
@@ -161,11 +96,12 @@ export const roomRepository = {
     })
   },
 
-  restoreMembership: async (roomId: string, userId: string) => {
+  updateMembership: async ({ roomId, userId, archivedAt, role }: UpdateMembershipInput) => {
     const [membership] = await db
       .update(roomMembers)
       .set({
-        archivedAt: null,
+        ...(archivedAt !== undefined ? { archivedAt } : {}),
+        ...(role ? { role } : {}),
       })
       .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
       .returning()
@@ -173,19 +109,38 @@ export const roomRepository = {
     return membership
   },
 
-  findDirectRoomForUsers: async (userIds: [string, string]) => {
-    const directRooms = await db.query.rooms.findMany({
-      where: eq(rooms.type, "dm"),
+  listMembersByRoomId: async (roomId: string) => {
+    return db.query.roomMembers.findMany({
+      where: eq(roomMembers.roomId, roomId),
       with: {
-        members: true,
+        user: true,
+      },
+    })
+  },
+
+  listDirectRoomCandidatesForUsers: async (userIds: [string, string]) => {
+    const memberships = await db.query.roomMembers.findMany({
+      where: inArray(roomMembers.userId, userIds),
+      with: {
+        room: true,
       },
     })
 
-    return directRooms.find((room) => {
-      const roomUserIds = room.members.map((member) => member.userId).sort()
-      const sortedTargetUserIds = [...userIds].sort()
+    const candidateRoomIds = [...new Set(
+      memberships
+        .filter((membership) => membership.room.type === "dm")
+        .map((membership) => membership.roomId),
+    )]
 
-      return roomUserIds.length === 2 && roomUserIds[0] === sortedTargetUserIds[0] && roomUserIds[1] === sortedTargetUserIds[1]
+    if (candidateRoomIds.length === 0) {
+      return []
+    }
+
+    return db.query.rooms.findMany({
+      where: inArray(rooms.id, candidateRoomIds),
+      with: {
+        members: true,
+      },
     })
   },
 }
