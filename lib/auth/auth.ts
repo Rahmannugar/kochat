@@ -1,9 +1,13 @@
 import { headers } from "next/headers"
+import { createHash } from "node:crypto"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { emailOTP } from "better-auth/plugins"
 import { db } from "@/lib/db"
 import { getServerEnv } from "@/lib/env/server"
 import * as schema from "@/lib/db/schema"
+import { buildOtpEmail } from "@/lib/auth/auth-email"
+import { mailService } from "@/lib/mail/mail.service"
 
 const env = getServerEnv()
 
@@ -18,6 +22,32 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
+  plugins: [
+    emailOTP({
+      expiresIn: 300,
+      allowedAttempts: 3,
+      storeOTP: {
+        hash: async (otp) => {
+          return createHash("sha256").update(otp).digest("hex")
+        },
+      },
+      async sendVerificationOTP({ email, otp, type }) {
+        const message = buildOtpEmail({
+          appName: "Kochat",
+          email,
+          otp,
+          type,
+        })
+
+        await mailService.send({
+          to: email,
+          subject: message.subject,
+          text: message.text,
+          html: message.html,
+        })
+      },
+    }),
+  ],
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,

@@ -5,16 +5,39 @@ type RequiredServerEnvKey =
   | "GOOGLE_CLIENT_ID"
   | "GOOGLE_CLIENT_SECRET"
   | "NEXT_PUBLIC_SUPABASE_URL"
-  | "SUPABASE_SERVICE_ROLE_KEY";
+  | "SUPABASE_SERVICE_ROLE_KEY"
+  | "SMTP_HOST"
+  | "SMTP_PORT"
+  | "SMTP_USER"
+  | "SMTP_PASS"
+  | "SMTP_FROM";
 
 type OptionalServerEnvKey =
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
   | "AI_PROVIDER"
   | "AI_API_KEY"
-  | "AI_MODEL";
+  | "AI_MODEL"
+  | "SMTP_SECURE"
 
-type ServerEnv = Record<RequiredServerEnvKey, string> &
-  Partial<Record<OptionalServerEnvKey, string>>;
+type ServerEnv = {
+  DATABASE_URL: string
+  BETTER_AUTH_SECRET: string
+  BETTER_AUTH_URL: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
+  NEXT_PUBLIC_SUPABASE_URL: string
+  SUPABASE_SERVICE_ROLE_KEY: string
+  SMTP_HOST: string
+  SMTP_PORT: number
+  SMTP_USER: string
+  SMTP_PASS: string
+  SMTP_FROM: string
+  SMTP_SECURE: boolean
+  NEXT_PUBLIC_SUPABASE_ANON_KEY?: string
+  AI_PROVIDER?: string
+  AI_API_KEY?: string
+  AI_MODEL?: string
+}
 
 let cachedEnv: ServerEnv | undefined;
 
@@ -26,7 +49,12 @@ const requiredKeys: RequiredServerEnvKey[] = [
   "GOOGLE_CLIENT_SECRET",
   "NEXT_PUBLIC_SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
-];
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
+  "SMTP_FROM",
+]
 
 export const getServerEnv = () => {
   if (cachedEnv) {
@@ -50,10 +78,16 @@ export const getServerEnv = () => {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL as string,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+    SMTP_HOST: process.env.SMTP_HOST as string,
+    SMTP_PORT: Number(process.env.SMTP_PORT),
+    SMTP_USER: process.env.SMTP_USER as string,
+    SMTP_PASS: process.env.SMTP_PASS as string,
+    SMTP_FROM: process.env.SMTP_FROM as string,
+    SMTP_SECURE: process.env.SMTP_SECURE === "true",
     AI_PROVIDER: process.env.AI_PROVIDER,
     AI_API_KEY: process.env.AI_API_KEY,
     AI_MODEL: process.env.AI_MODEL,
-  };
+  }
 
-  return cachedEnv;
-};
+  return cachedEnv
+}
