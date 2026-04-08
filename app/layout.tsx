@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
   metadataBase: new URL(metadataBase),
+  manifest: "/manifest.webmanifest",
+  applicationName: siteConfig.name,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: siteConfig.name,
+  },
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.description,
@@ -25,6 +32,13 @@ export const metadata: Metadata = {
     title: siteConfig.twitter.title,
     description: siteConfig.twitter.description,
     images: [siteConfig.openGraphImage],
+  },
+  icons: {
+    icon: [
+      { url: "/icon.ico" },
+      { url: "/images/kochat-logo.png", sizes: "500x500", type: "image/png" },
+    ],
+    apple: [{ url: "/images/kochat-logo.png", sizes: "500x500", type: "image/png" }],
   },
 }
 
