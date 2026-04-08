@@ -38,7 +38,7 @@ export const RoomListPanel = ({
 
   return (
     <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
-      <CardHeader className="gap-4">
+      <CardHeader className="gap-4 pb-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11 border border-border/60">
             <AvatarImage src={user.image ?? undefined} alt={user.name} />
@@ -52,26 +52,26 @@ export const RoomListPanel = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Button asChild variant="outline" className="justify-start rounded-full px-4">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
             <Link href="/dashboard#start-chat">
               <UserCirclePlusIcon size={18} weight="bold" />
               New chat
             </Link>
           </Button>
-          <Button asChild className="justify-start rounded-full px-4">
+          <Button asChild className="h-10 justify-start rounded-2xl px-4">
             <Link href="/dashboard#create-group">
               <UsersThreeIcon size={18} weight="bold" />
               New group
             </Link>
           </Button>
-          <Button asChild variant="outline" className="justify-start rounded-full px-4">
+          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
             <Link href="/dashboard#join-group">
               <PlusIcon size={18} weight="bold" />
               Join group
             </Link>
           </Button>
-          <Button asChild variant="outline" className="justify-start rounded-full px-4">
+          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
             <Link href="/profile">
               <GearSixIcon size={18} weight="bold" />
               Profile
@@ -80,7 +80,7 @@ export const RoomListPanel = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-0">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Your conversations</p>
           <span className="text-xs text-muted-foreground">

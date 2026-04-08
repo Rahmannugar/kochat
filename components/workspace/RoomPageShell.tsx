@@ -63,7 +63,7 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {room.type === "group" ? (
                   <UsersThreeIcon size={22} weight="bold" className="text-primary" />
                 ) : (

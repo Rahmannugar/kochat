@@ -80,6 +80,11 @@ const MessageBubble = ({
         ? "/profile"
         : `/users/${message.senderUser.id}`
       : null
+  const aiMark = (
+    <span className="relative inline-flex size-7 items-center justify-center overflow-hidden rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.95),rgba(255,255,255,0.18)_22%,transparent_23%),linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] text-[10px] font-semibold tracking-[0.2em] text-white shadow-sm">
+      AI
+    </span>
+  )
 
   return (
     <div
@@ -99,10 +104,10 @@ const MessageBubble = ({
               <AvatarFallback
                 className={cn(
                   message.sender === "ai" &&
-                    "bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] font-semibold text-white",
+                    "bg-transparent p-0 text-white",
                 )}
               >
-                {message.sender === "ai" ? "AI" : getInitials(senderName)}
+                {message.sender === "ai" ? aiMark : getInitials(senderName)}
               </AvatarFallback>
             </Avatar>
           </Link>
@@ -115,10 +120,10 @@ const MessageBubble = ({
             <AvatarFallback
               className={cn(
                 message.sender === "ai" &&
-                  "bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] font-semibold text-white",
+                  "bg-transparent p-0 text-white",
               )}
             >
-              {message.sender === "ai" ? "AI" : getInitials(senderName)}
+              {message.sender === "ai" ? aiMark : getInitials(senderName)}
             </AvatarFallback>
           </Avatar>
         )
@@ -136,7 +141,7 @@ const MessageBubble = ({
             isOwnMessage
               ? "bg-primary text-primary-foreground"
               : message.sender === "ai"
-                ? "border border-primary/20 bg-primary/8 text-foreground"
+                ? "border border-sky-500/20 bg-[linear-gradient(180deg,rgba(23,37,84,0.03),rgba(14,165,233,0.08))] text-foreground dark:bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(20,184,166,0.08))]"
                 : "border border-border/60 bg-background text-foreground",
           )}
         >

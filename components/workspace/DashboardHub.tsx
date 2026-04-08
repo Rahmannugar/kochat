@@ -151,7 +151,22 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
         <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
           <RoomListPanel user={user} />
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-4">
+            <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
+              <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-end md:justify-between md:p-6">
+                <div className="max-w-2xl">
+                  <p className="text-lg font-semibold">Start something quickly</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Open a direct chat, create a group, or join with a code without bouncing around the app.
+                  </p>
+                </div>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {user.username ? `@${user.username}` : user.email}
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <Card id="start-chat" className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -159,7 +174,7 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                   Start direct chat
                 </CardTitle>
                 <CardDescription>
-                  Search by exact username or email, then open a private room immediately.
+                  Search by exact username or email and open a private room.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -193,7 +208,7 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                   Create group
                 </CardTitle>
                 <CardDescription>
-                  Spin up a group room with a generated join code for the people you invite.
+                  Create a room and share its join code with the people you want inside.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -230,6 +245,7 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                 </Button>
               </CardContent>
             </Card>
+            </div>
 
             <Card id="join-group" className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur lg:col-span-2">
               <CardHeader>
@@ -238,7 +254,7 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                   Join group
                 </CardTitle>
                 <CardDescription>
-                  Enter an exact group code to join the room without typeahead or discovery noise.
+                  Use an exact group code to step straight into the room.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 md:flex-row md:items-end">

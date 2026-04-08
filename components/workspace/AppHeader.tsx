@@ -20,9 +20,7 @@ export const AppHeader = () => {
         </div>
         <div>
           <p className="text-xl font-semibold">{siteConfig.name}</p>
-          <p className="text-sm text-muted-foreground">
-            Rooms, DMs, realtime updates, and AI support from one workspace.
-          </p>
+          <p className="text-sm text-muted-foreground">Private chat, groups, and AI in one place.</p>
         </div>
       </div>
 
