@@ -6,8 +6,9 @@ import { ArrowLeftIcon } from "@phosphor-icons/react"
 import { AppHeader } from "@/components/workspace/AppHeader"
 import { ProfilePanel } from "@/components/workspace/ProfilePanel"
 import { RoomListPanel } from "@/components/workspace/RoomListPanel"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import type { AuthUser } from "@/lib/auth/auth.types"
+import { cn } from "@/lib/utils"
 
 type ProfilePageShellProps = {
   user: AuthUser
@@ -22,12 +23,18 @@ export const ProfilePageShell = ({ user }: ProfilePageShellProps) => {
         <AppHeader />
 
         <div className="lg:hidden">
-          <Button asChild variant="ghost" className="rounded-full px-0 text-muted-foreground">
-            <Link href="/dashboard">
-              <ArrowLeftIcon size={18} weight="bold" />
-              Back to dashboard
-            </Link>
-          </Button>
+          <Link
+            href="/dashboard"
+            className={cn(
+              buttonVariants({
+                variant: "ghost",
+                className: "rounded-full px-0 text-muted-foreground",
+              }),
+            )}
+          >
+            <ArrowLeftIcon size={18} weight="bold" />
+            Back to dashboard
+          </Link>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">

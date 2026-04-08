@@ -5,8 +5,9 @@ import { ArrowLeftIcon } from "@phosphor-icons/react"
 import { AppHeader } from "@/components/workspace/AppHeader"
 import { RoomListPanel } from "@/components/workspace/RoomListPanel"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import type { AuthUser } from "@/lib/auth/auth.types"
+import { cn } from "@/lib/utils"
 
 type UserProfilePageShellProps = {
   authUser: AuthUser
@@ -36,12 +37,18 @@ export const UserProfilePageShell = ({
           </div>
 
           <section className="rounded-[1.75rem] border border-border/70 bg-background/90 p-5 shadow-sm backdrop-blur md:p-6">
-            <Button asChild variant="ghost" className="mb-5 rounded-full px-0 text-muted-foreground">
-              <Link href="/dashboard">
-                <ArrowLeftIcon size={18} weight="bold" />
-                Back to dashboard
-              </Link>
-            </Button>
+            <Link
+              href="/dashboard"
+              className={cn(
+                buttonVariants({
+                  variant: "ghost",
+                  className: "mb-5 rounded-full px-0 text-muted-foreground",
+                }),
+              )}
+            >
+              <ArrowLeftIcon size={18} weight="bold" />
+              Back to dashboard
+            </Link>
 
             <div className="rounded-[1.75rem] border border-border/60 bg-muted/20 p-6">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">

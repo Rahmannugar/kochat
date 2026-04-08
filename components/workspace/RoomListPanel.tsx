@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import {
   GearSixIcon,
   HashIcon,
@@ -8,19 +8,29 @@ import {
   PlusIcon,
   UserCirclePlusIcon,
   UsersThreeIcon,
-} from "@phosphor-icons/react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useRooms } from "@/lib/rooms/useRooms"
-import type { AuthUser } from "@/lib/auth/auth.types"
-import { cn } from "@/lib/utils"
+} from "@phosphor-icons/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRooms } from "@/lib/rooms/useRooms";
+import type { AuthUser } from "@/lib/auth/auth.types";
+import { cn } from "@/lib/utils";
 
 type RoomListPanelProps = {
-  user: AuthUser
-  selectedRoomId?: string | null
-}
+  user: AuthUser;
+  selectedRoomId?: string | null;
+  showQuickActions?: boolean;
+  activeDashboardTab?: "rooms" | "start-chat" | "create-group" | "join-group";
+  onDashboardTabChange?: (
+    nextTab: "rooms" | "start-chat" | "create-group" | "join-group",
+  ) => void;
+};
 
 const getInitials = (name: string) =>
   name
@@ -28,13 +38,16 @@ const getInitials = (name: string) =>
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
+    .join("");
 
 export const RoomListPanel = ({
   user,
   selectedRoomId = null,
+  showQuickActions = false,
+  activeDashboardTab = "rooms",
+  onDashboardTabChange,
 }: RoomListPanelProps) => {
-  const { data: memberships = [], isLoading } = useRooms()
+  const { data: memberships = [], isLoading } = useRooms();
 
   return (
     <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
@@ -52,32 +65,56 @@ export const RoomListPanel = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
-            <Link href="/dashboard#start-chat">
+        {showQuickActions ? (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onDashboardTabChange?.("start-chat")}
+              className={cn(
+                "inline-flex h-11 items-center justify-start gap-2 rounded-2xl border px-4 text-sm font-medium transition-colors",
+                activeDashboardTab === "start-chat"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-muted/40",
+              )}
+            >
               <UserCirclePlusIcon size={18} weight="bold" />
-              New chat
-            </Link>
-          </Button>
-          <Button asChild className="h-10 justify-start rounded-2xl px-4">
-            <Link href="/dashboard#create-group">
+              <span>New chat</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onDashboardTabChange?.("create-group")}
+              className={cn(
+                "inline-flex h-11 items-center justify-start gap-2 rounded-2xl border px-4 text-sm font-medium transition-colors",
+                activeDashboardTab === "create-group"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-muted/40",
+              )}
+            >
               <UsersThreeIcon size={18} weight="bold" />
-              New group
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
-            <Link href="/dashboard#join-group">
+              <span>New group</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onDashboardTabChange?.("join-group")}
+              className={cn(
+                "inline-flex h-11 items-center justify-start gap-2 rounded-2xl border px-4 text-sm font-medium transition-colors",
+                activeDashboardTab === "join-group"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-muted/40",
+              )}
+            >
               <PlusIcon size={18} weight="bold" />
-              Join group
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="h-10 justify-start rounded-2xl px-4">
-            <Link href="/profile">
+              <span>Join group</span>
+            </button>
+            <Link
+              href="/profile"
+              className="inline-flex h-11 items-center justify-start gap-2 rounded-2xl border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted/40"
+            >
               <GearSixIcon size={18} weight="bold" />
-              Profile
+              <span>Profile</span>
             </Link>
-          </Button>
-        </div>
+          </div>
+        ) : null}
       </CardHeader>
 
       <CardContent className="space-y-4 pt-0">
@@ -99,8 +136,8 @@ export const RoomListPanel = ({
               ))
             ) : memberships.length > 0 ? (
               memberships.map((membership) => {
-                const room = membership.room
-                const isSelected = room.id === selectedRoomId
+                const room = membership.room;
+                const isSelected = room.id === selectedRoomId;
 
                 return (
                   <Link
@@ -117,9 +154,17 @@ export const RoomListPanel = ({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {room.type === "group" ? (
-                            <HashIcon size={16} weight="bold" className="text-primary" />
+                            <HashIcon
+                              size={16}
+                              weight="bold"
+                              className="text-primary"
+                            />
                           ) : (
-                            <LockSimpleIcon size={16} weight="bold" className="text-primary" />
+                            <LockSimpleIcon
+                              size={16}
+                              weight="bold"
+                              className="text-primary"
+                            />
                           )}
                           <p className="truncate font-medium">{room.name}</p>
                         </div>
@@ -135,14 +180,14 @@ export const RoomListPanel = ({
                       </span>
                     </div>
                   </Link>
-                )
+                );
               })
             ) : (
               <div className="rounded-[1.5rem] border border-dashed border-border/70 bg-muted/30 p-5 text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">No rooms yet</p>
                 <p className="mt-2">
-                  Start with a direct message or create your first group room. This
-                  workspace will update in realtime as conversations begin.
+                  Start with a direct message or create your first group room.
+                  This workspace will update in realtime as conversations begin.
                 </p>
               </div>
             )}
@@ -150,5 +195,5 @@ export const RoomListPanel = ({
         </ScrollArea>
       </CardContent>
     </Card>
-  )
-}
+  );
+};

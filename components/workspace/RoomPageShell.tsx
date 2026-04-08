@@ -5,9 +5,10 @@ import { ArrowLeftIcon, ChatsCircleIcon, UsersThreeIcon } from "@phosphor-icons/
 import { AppHeader } from "@/components/workspace/AppHeader"
 import { RoomListPanel } from "@/components/workspace/RoomListPanel"
 import { RoomPanel } from "@/components/workspace/RoomPanel"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import type { AuthUser } from "@/lib/auth/auth.types"
 import type { RoomListItem } from "@/lib/rooms/room.client.types"
+import { cn } from "@/lib/utils"
 
 type RoomPageShellProps = {
   user: AuthUser
@@ -22,12 +23,18 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
 
         <div className="lg:hidden">
           <div className="rounded-[1.75rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
-            <Button asChild variant="ghost" className="mb-3 rounded-full px-0 text-muted-foreground">
-              <Link href="/dashboard">
-                <ArrowLeftIcon size={18} weight="bold" />
-                Back to dashboard
-              </Link>
-            </Button>
+            <Link
+              href="/dashboard"
+              className={cn(
+                buttonVariants({
+                  variant: "ghost",
+                  className: "mb-3 rounded-full px-0 text-muted-foreground",
+                }),
+              )}
+            >
+              <ArrowLeftIcon size={18} weight="bold" />
+              Back to dashboard
+            </Link>
 
             <div className="flex items-center gap-2">
               {room.type === "group" ? (
@@ -55,12 +62,18 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
           <section className="rounded-[1.75rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur md:p-6">
             <div className="hidden border-b border-border/60 pb-5 lg:block">
               <div className="mb-4">
-                <Button asChild variant="ghost" className="rounded-full px-0 text-muted-foreground">
-                  <Link href="/dashboard">
-                    <ArrowLeftIcon size={18} weight="bold" />
-                    Back to dashboard
-                  </Link>
-                </Button>
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    buttonVariants({
+                      variant: "ghost",
+                      className: "rounded-full px-0 text-muted-foreground",
+                    }),
+                  )}
+                >
+                  <ArrowLeftIcon size={18} weight="bold" />
+                  Back to dashboard
+                </Link>
               </div>
 
               <div className="flex items-center gap-3">

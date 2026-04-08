@@ -1,11 +1,14 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ChatsCircleIcon,
+  GearSixIcon,
   MagnifyingGlassIcon,
   PlusIcon,
+  UserCirclePlusIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react"
 import { toast } from "sonner"
@@ -17,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { AuthUser } from "@/lib/auth/auth.types"
+import { cn } from "@/lib/utils"
 import { apiClient, ApiError } from "@/lib/utils/client"
 
 type ApiResponse<T> = {
@@ -37,6 +41,8 @@ type SearchUserResponse = {
 type DashboardHubProps = {
   user: AuthUser
 }
+
+type DashboardTab = "rooms" | "start-chat" | "create-group" | "join-group"
 
 const getApiErrorMessage = (fallback: string, error: unknown) => {
   if (error instanceof ApiError) {
@@ -66,6 +72,7 @@ const getApiErrorMessage = (fallback: string, error: unknown) => {
 
 export const DashboardHub = ({ user }: DashboardHubProps) => {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<DashboardTab>("start-chat")
   const [lookupQuery, setLookupQuery] = useState("")
   const [groupName, setGroupName] = useState("")
   const [groupDescription, setGroupDescription] = useState("")
@@ -149,25 +156,84 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
         <AppHeader />
 
         <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <RoomListPanel user={user} />
+          <div className="order-2 lg:order-1">
+            <div className="hidden lg:block">
+              <RoomListPanel user={user} />
+            </div>
+          </div>
 
-          <div className="space-y-4">
+          <div className="order-1 space-y-4 lg:order-2">
             <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
-              <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-end md:justify-between md:p-6">
+              <CardContent className="p-5 md:p-6">
                 <div className="max-w-2xl">
                   <p className="text-lg font-semibold">Start something quickly</p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
                     Open a direct chat, create a group, or join with a code without bouncing around the app.
                   </p>
                 </div>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  {user.username ? `@${user.username}` : user.email}
-                </p>
               </CardContent>
             </Card>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Card id="start-chat" className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
+            <div className="lg:hidden">
+              <RoomListPanel
+                user={user}
+                showQuickActions
+                activeDashboardTab={activeTab}
+                onDashboardTabChange={setActiveTab}
+              />
+            </div>
+
+            <div className="hidden lg:flex lg:flex-wrap lg:gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("start-chat")}
+                className={cn(
+                  "inline-flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+                  activeTab === "start-chat"
+                    ? "border-primary/40 bg-primary/10 text-foreground"
+                    : "border-border bg-background hover:bg-muted/40",
+                )}
+              >
+                <UserCirclePlusIcon size={18} weight="bold" />
+                <span>New chat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("create-group")}
+                className={cn(
+                  "inline-flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+                  activeTab === "create-group"
+                    ? "border-primary/40 bg-primary/10 text-foreground"
+                    : "border-border bg-background hover:bg-muted/40",
+                )}
+              >
+                <UsersThreeIcon size={18} weight="bold" />
+                <span>New group</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("join-group")}
+                className={cn(
+                  "inline-flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+                  activeTab === "join-group"
+                    ? "border-primary/40 bg-primary/10 text-foreground"
+                    : "border-border bg-background hover:bg-muted/40",
+                )}
+              >
+                <PlusIcon size={18} weight="bold" />
+                <span>Join group</span>
+              </button>
+              <Link
+                href="/profile"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted/40"
+              >
+                <GearSixIcon size={18} weight="bold" />
+                <span>Profile</span>
+              </Link>
+            </div>
+
+            {activeTab === "start-chat" ? (
+            <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <MagnifyingGlassIcon size={20} weight="bold" className="text-primary" />
@@ -200,8 +266,10 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                 </Button>
               </CardContent>
             </Card>
+            ) : null}
 
-            <Card id="create-group" className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
+            {activeTab === "create-group" ? (
+            <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <UsersThreeIcon size={20} weight="bold" className="text-primary" />
@@ -245,9 +313,10 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                 </Button>
               </CardContent>
             </Card>
-            </div>
+            ) : null}
 
-            <Card id="join-group" className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur lg:col-span-2">
+            {activeTab === "join-group" ? (
+            <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <UsersThreeIcon size={20} weight="bold" className="text-primary" />
@@ -279,6 +348,13 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
                 </Button>
               </CardContent>
             </Card>
+            ) : null}
+
+            {activeTab === "rooms" ? (
+              <div className="rounded-[1.75rem] border border-border/70 bg-background/90 p-6 text-sm text-muted-foreground shadow-sm backdrop-blur lg:hidden">
+                Pick a room from the list above to continue.
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
