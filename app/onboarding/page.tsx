@@ -10,8 +10,10 @@ const OnboardingPage = async () => {
     redirect("/sign-in")
   }
 
-  if ((await authService.getAuthRoute(session.user.id)) !== "/onboarding") {
-    redirect("/dashboard")
+  const authRoute = await authService.getAuthRoute(session.user.id)
+
+  if (authRoute !== "/onboarding") {
+    redirect(authRoute)
   }
 
   return (

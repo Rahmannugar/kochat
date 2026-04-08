@@ -2,6 +2,7 @@ export type AuthUser = {
   id: string
   name: string
   email: string
+  emailVerified?: boolean
   username?: string | null
   bio?: string | null
   image?: string | null
@@ -25,5 +26,6 @@ export type AuthStoreState = {
 
 export type AuthRailContext = {
   user: AuthUser | null
+  isEmailVerified: boolean
   isOnboarded: boolean
 }

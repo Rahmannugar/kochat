@@ -12,6 +12,7 @@ import {
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/lib/auth/useAuth";
+import { useEmailOtp } from "@/lib/auth/useEmailOtp";
 import { signUpSchema, type SignUpValues } from "@/lib/auth/auth.schema";
 import { siteConfig } from "@/lib/utils/siteConfig";
 import { GoogleIcon } from "@/components/shared/GoogleIcon";
@@ -31,6 +32,7 @@ import { ThemeToggler } from "@/components/shared/ThemeToggler";
 export const SignUpForm = () => {
   const router = useRouter();
   const { signUpWithEmail, signInWithGoogle } = useAuth();
+  const { sendOtp } = useEmailOtp();
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -63,12 +65,18 @@ export const SignUpForm = () => {
         name: values.name,
         username: values.username,
       });
+    } catch {}
+
+    try {
+      await sendOtp({
+        email: values.email,
+        type: "email-verification",
+      })
     } catch {
-      router.replace("/onboarding");
-      return;
+      setErrorMessage("Your account was created, but we couldn't send a verification code yet.")
     }
 
-    router.replace("/dashboard");
+    router.replace("/verify-email");
   });
 
   const handleGoogleSignIn = () => {

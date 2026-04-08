@@ -31,6 +31,7 @@ export const AuthGuard = ({
       rail={authenticatedRail}
       context={{
         user: effectiveUser,
+        isEmailVerified: Boolean(effectiveUser?.emailVerified),
         isOnboarded: Boolean(effectiveUser?.username),
       }}
       onRedirect={(to) => router.replace(to)}

@@ -1,5 +1,5 @@
 {
-  "id": "fe729ce1-5c9e-4920-87ea-edbd0f24f02a",
+  "id": "85ee3edf-4974-491a-b82a-55f821c500b3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -421,6 +421,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "dm_key": {
+          "name": "dm_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_by": {
           "name": "created_by",
           "type": "text",
@@ -448,6 +454,21 @@
           "columns": [
             {
               "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rooms_dm_key_unique": {
+          "name": "rooms_dm_key_unique",
+          "columns": [
+            {
+              "expression": "dm_key",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -493,9 +514,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "rooms_type_code_check": {
-          "name": "rooms_type_code_check",
-          "value": "(\"rooms\".\"type\" = 'group' and \"rooms\".\"code\" is not null) or (\"rooms\".\"type\" = 'dm' and \"rooms\".\"code\" is null)"
+        "rooms_type_code_dm_key_check": {
+          "name": "rooms_type_code_dm_key_check",
+          "value": "(\"rooms\".\"type\" = 'group' and \"rooms\".\"code\" is not null and \"rooms\".\"dm_key\" is null) or (\"rooms\".\"type\" = 'dm' and \"rooms\".\"code\" is null and \"rooms\".\"dm_key\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -717,8 +738,8 @@
         }
       },
       "indexes": {
-        "messages_room_id_created_at_idx": {
-          "name": "messages_room_id_created_at_idx",
+        "messages_room_id_created_at_id_idx": {
+          "name": "messages_room_id_created_at_id_idx",
           "columns": [
             {
               "expression": "room_id",
@@ -728,6 +749,12 @@
             },
             {
               "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

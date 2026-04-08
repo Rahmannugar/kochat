@@ -4,6 +4,15 @@ import type { AuthRailContext } from "./auth.types"
 export const authenticatedRail = createRail<AuthRailContext>("authenticated", [
   requireAuth("/sign-in"),
   (ctx) => {
+    if (!ctx.isEmailVerified) {
+      return {
+        decision: {
+          type: "redirect",
+          to: "/verify-email",
+        } as const,
+      }
+    }
+
     if (!ctx.isOnboarded) {
       return {
         decision: {

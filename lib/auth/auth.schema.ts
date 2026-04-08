@@ -29,5 +29,13 @@ export const signUpSchema = signInSchema.extend({
   }
 })
 
+export const verifyEmailSchema = z.object({
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Enter the 6-digit code"),
+})
+
 export type SignInValues = z.infer<typeof signInSchema>
 export type SignUpValues = z.infer<typeof signUpSchema>
+export type VerifyEmailValues = z.infer<typeof verifyEmailSchema>

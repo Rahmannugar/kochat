@@ -68,10 +68,39 @@ export const useEmailOtp = () => {
     [],
   )
 
+  const verifyEmail = useCallback(
+    async ({
+      email,
+      otp,
+    }: {
+      email: string
+      otp: string
+    }) => {
+      setIsPending(true)
+      setError(null)
+
+      try {
+        return await authClient.emailOtp.verifyEmail({
+          email,
+          otp,
+        })
+      } catch (otpError) {
+        const message =
+          otpError instanceof Error ? otpError.message : "Failed to verify email"
+        setError(message)
+        throw otpError
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
+
   return {
     isPending,
     error,
     sendOtp,
     signInWithOtp,
+    verifyEmail,
   }
 }

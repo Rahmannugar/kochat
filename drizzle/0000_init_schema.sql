@@ -59,10 +59,11 @@ CREATE TABLE "rooms" (
 	"description" text,
 	"type" "room_type" NOT NULL,
 	"code" text,
+	"dm_key" text,
 	"created_by" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "rooms_type_code_check" CHECK (("rooms"."type" = 'group' and "rooms"."code" is not null) or ("rooms"."type" = 'dm' and "rooms"."code" is null))
+	CONSTRAINT "rooms_type_code_dm_key_check" CHECK (("rooms"."type" = 'group' and "rooms"."code" is not null and "rooms"."dm_key" is null) or ("rooms"."type" = 'dm' and "rooms"."code" is null and "rooms"."dm_key" is not null))
 );
 --> statement-breakpoint
 CREATE TABLE "room_members" (
@@ -101,9 +102,10 @@ CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> stat
 CREATE UNIQUE INDEX "account_provider_account_unique" ON "account" USING btree ("provider_id","account_id");--> statement-breakpoint
 CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "rooms_code_unique" ON "rooms" USING btree ("code");--> statement-breakpoint
+CREATE UNIQUE INDEX "rooms_dm_key_unique" ON "rooms" USING btree ("dm_key");--> statement-breakpoint
 CREATE INDEX "rooms_type_idx" ON "rooms" USING btree ("type");--> statement-breakpoint
 CREATE UNIQUE INDEX "room_members_room_user_unique" ON "room_members" USING btree ("room_id","user_id");--> statement-breakpoint
 CREATE INDEX "room_members_room_id_idx" ON "room_members" USING btree ("room_id");--> statement-breakpoint
 CREATE INDEX "room_members_user_id_idx" ON "room_members" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "messages_room_id_created_at_idx" ON "messages" USING btree ("room_id","created_at");--> statement-breakpoint
+CREATE INDEX "messages_room_id_created_at_id_idx" ON "messages" USING btree ("room_id","created_at","id");--> statement-breakpoint
 CREATE INDEX "messages_sender_user_id_idx" ON "messages" USING btree ("sender_user_id");

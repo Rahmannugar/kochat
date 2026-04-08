@@ -6,7 +6,7 @@ type BootstrapUserInput = {
   image?: string | null;
 };
 
-type AuthFlowDestination = "/sign-in" | "/onboarding" | "/dashboard"
+type AuthFlowDestination = "/sign-in" | "/verify-email" | "/onboarding" | "/dashboard"
 
 export const authService = {
   bootstrapUserAccount: async ({ id, name, image }: BootstrapUserInput) => {
@@ -39,8 +39,16 @@ export const authService = {
   },
 
   getAuthRoute: async (userId: string): Promise<AuthFlowDestination> => {
-    const needsOnboarding = await authService.requiresProfileCompletion(userId)
+    const currentUser = await userRepository.findById(userId)
 
-    return needsOnboarding ? "/onboarding" : "/dashboard"
+    if (!currentUser) {
+      throw new Error("Authenticated user record was not found")
+    }
+
+    if (!currentUser.emailVerified) {
+      return "/verify-email"
+    }
+
+    return !currentUser.username ? "/onboarding" : "/dashboard"
   },
 };
