@@ -43,6 +43,14 @@ const getInitials = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
+const getRoomDisplayName = (roomName: string, roomType: "dm" | "group") => {
+  if (roomType === "dm" && roomName.includes(":")) {
+    return "Direct conversation"
+  }
+
+  return roomName
+}
+
 export const RoomListPanel = ({
   user,
   selectedRoomId = null,
@@ -90,12 +98,12 @@ export const RoomListPanel = ({
   return (
     <Card className="min-w-0 overflow-hidden rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
       <CardHeader className="gap-4 pb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Avatar className="size-11 border border-border/60">
             <AvatarImage src={user.image ?? undefined} alt={user.name} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <CardTitle className="truncate text-base">{user.name}</CardTitle>
             <CardDescription className="truncate">
               {user.username ? `@${user.username}` : user.email}
@@ -104,7 +112,7 @@ export const RoomListPanel = ({
         </div>
 
         {showQuickActions ? (
-          <div className="grid grid-cols-2 gap-2">
+            <div className="grid min-w-0 grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => onDashboardTabChange?.("rooms")}
@@ -116,7 +124,7 @@ export const RoomListPanel = ({
               )}
             >
               <HashIcon size={18} weight="bold" />
-              <span>Conversations</span>
+              <span className="truncate">Conversations</span>
             </button>
             <button
               type="button"
@@ -129,7 +137,7 @@ export const RoomListPanel = ({
               )}
             >
               <UserCirclePlusIcon size={18} weight="bold" />
-              <span>New chat</span>
+              <span className="truncate">New chat</span>
             </button>
             <button
               type="button"
@@ -142,7 +150,7 @@ export const RoomListPanel = ({
               )}
             >
               <UsersThreeIcon size={18} weight="bold" />
-              <span>New group</span>
+              <span className="truncate">New group</span>
             </button>
             <button
               type="button"
@@ -155,14 +163,14 @@ export const RoomListPanel = ({
               )}
             >
               <PlusIcon size={18} weight="bold" />
-              <span>Join group</span>
+              <span className="truncate">Join group</span>
             </button>
             <Link
               href="/profile"
               className="inline-flex h-11 items-center justify-start gap-2 rounded-2xl border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted/40"
             >
               <GearSixIcon size={18} weight="bold" />
-              <span>Profile</span>
+              <span className="truncate">Profile</span>
             </Link>
           </div>
         ) : null}
@@ -190,6 +198,7 @@ export const RoomListPanel = ({
               memberships.map((membership) => {
                 const room = membership.room;
                 const isSelected = room.id === selectedRoomId;
+                const roomDisplayName = getRoomDisplayName(room.name, room.type)
 
                 return (
                   <Link
@@ -218,7 +227,7 @@ export const RoomListPanel = ({
                               className="text-primary"
                             />
                           )}
-                          <p className="truncate font-medium">{room.name}</p>
+                          <p className="truncate font-medium">{roomDisplayName}</p>
                         </div>
                         <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
                           {room.description ||

@@ -29,6 +29,14 @@ const getInitials = (value: string | null | undefined) =>
 const getProfileHref = (member: RoomMemberListItem, currentUserId: string) =>
   member.user.id === currentUserId ? "/profile" : `/users/${member.user.id}`
 
+const getRoomDisplayName = (roomName: string, roomType: "dm" | "group") => {
+  if (roomType === "dm" && roomName.includes(":")) {
+    return "Direct conversation"
+  }
+
+  return roomName
+}
+
 export const RoomMembersPanel = ({
   room,
   activeUsers,
@@ -53,6 +61,7 @@ export const RoomMembersPanel = ({
   )
   const canGoBack = pageIndex > 0
   const canGoNext = pageIndex < pages.length - 1 || Boolean(hasNextPage)
+  const roomDisplayName = getRoomDisplayName(room.name, room.type)
 
   useEffect(() => {
     if (pageIndex > 0 && pageIndex >= pages.length) {
@@ -85,11 +94,18 @@ export const RoomMembersPanel = ({
             <UsersThreeIcon size={18} weight="bold" className="text-primary" />
             Room members
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Browse who is inside {room.name}.
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            {room.type === "dm"
+              ? "Browse everyone in this direct conversation."
+              : `Browse who is inside ${roomDisplayName}.`}
           </p>
         </div>
-        <Button type="button" variant="ghost" className="rounded-full" onClick={onBack}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full rounded-full sm:w-auto"
+          onClick={onBack}
+        >
           <ArrowLeftIcon size={16} weight="bold" />
           Back to messages
         </Button>
@@ -114,7 +130,7 @@ export const RoomMembersPanel = ({
                   href={getProfileHref(member, currentUserId)}
                   className="flex min-w-0 w-full overflow-hidden flex-col gap-3 rounded-[1.35rem] border border-border/60 bg-background/85 px-4 py-3 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Avatar size="sm">
                       <AvatarImage src={member.user.image ?? undefined} alt={member.user.name} />
                       <AvatarFallback>{getInitials(member.user.name)}</AvatarFallback>
@@ -127,7 +143,7 @@ export const RoomMembersPanel = ({
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                         <WifiHighIcon size={12} weight="bold" />
