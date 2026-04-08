@@ -54,6 +54,15 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
 
           <section className="rounded-[1.75rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur md:p-6">
             <div className="hidden border-b border-border/60 pb-5 lg:block">
+              <div className="mb-4">
+                <Button asChild variant="ghost" className="rounded-full px-0 text-muted-foreground">
+                  <Link href="/dashboard">
+                    <ArrowLeftIcon size={18} weight="bold" />
+                    Back to dashboard
+                  </Link>
+                </Button>
+              </div>
+
               <div className="flex items-center gap-2">
                 {room.type === "group" ? (
                   <UsersThreeIcon size={22} weight="bold" className="text-primary" />

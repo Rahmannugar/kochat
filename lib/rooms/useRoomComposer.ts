@@ -61,7 +61,12 @@ export const useRoomComposer = ({
   const [isUploadingVoice, setIsUploadingVoice] = useState(false)
 
   const sendTextMessage = useCallback(
-    async (content: string) => {
+    async (
+      content: string,
+      options?: {
+        quiet?: boolean
+      },
+    ) => {
       if (!roomId) {
         throw new Error("Room is required")
       }
@@ -83,7 +88,9 @@ export const useRoomComposer = ({
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send your message.", error)
-        toast.error(message)
+        if (!options?.quiet) {
+          toast.error(message)
+        }
         throw error
       } finally {
         setIsSendingMessage(false)
@@ -96,9 +103,11 @@ export const useRoomComposer = ({
     async ({
       file,
       content,
+      quiet,
     }: {
       file: File
       content?: string
+      quiet?: boolean
     }) => {
       if (!roomId) {
         throw new Error("Room is required")
@@ -135,11 +144,15 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/image`, formData)
 
-        toast.success("Image sent.")
+        if (!quiet) {
+          toast.success("Image sent.")
+        }
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send image.", error)
-        toast.error(message)
+        if (!quiet) {
+          toast.error(message)
+        }
         throw error
       } finally {
         setIsUploadingImage(false)
@@ -149,7 +162,12 @@ export const useRoomComposer = ({
   )
 
   const sendVoiceMessage = useCallback(
-    async (file: File) => {
+    async (
+      file: File,
+      options?: {
+        quiet?: boolean
+      },
+    ) => {
       if (!roomId) {
         throw new Error("Room is required")
       }
@@ -178,11 +196,15 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/voice`, formData)
 
-        toast.success("Voice message sent.")
+        if (!options?.quiet) {
+          toast.success("Voice message sent.")
+        }
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send voice message.", error)
-        toast.error(message)
+        if (!options?.quiet) {
+          toast.error(message)
+        }
         throw error
       } finally {
         setIsUploadingVoice(false)

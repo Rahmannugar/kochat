@@ -1,5 +1,10 @@
 export type AiProvider = string;
 
+export type AiImageInput = {
+  imageBase64: string;
+  mimeType: string;
+};
+
 export type AiPromptMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -11,6 +16,7 @@ export type StreamTextChunk = {
 
 export type GenerateTextInput = {
   messages: AiPromptMessage[];
+  images?: AiImageInput[];
   model?: string;
   temperature?: number;
   maxOutputTokens?: number;

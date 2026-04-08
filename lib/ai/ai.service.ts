@@ -1,6 +1,6 @@
 import { AI_SYSTEM_PROMPT } from "@/lib/ai/ai.config";
 import { getAiClient } from "@/lib/ai/ai-client";
-import type { AiPromptMessage } from "@/lib/ai/ai.types";
+import type { AiImageInput, AiPromptMessage } from "@/lib/ai/ai.types";
 import { messageRepository } from "@/lib/messages/message.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
 import { roomRepository } from "@/lib/rooms/room.repository";
@@ -31,10 +31,13 @@ const formatHumanMessage = (
   return `${label}: ${content}`;
 };
 
-const buildPromptMessages = async (
+const buildPromptPayload = async (
   roomId: string,
   triggerMessageId: string,
-): Promise<AiPromptMessage[]> => {
+): Promise<{
+  messages: AiPromptMessage[]
+  images: AiImageInput[]
+}> => {
   const contextMessages = await messageRepository.listRecentByRoomId(
     roomId,
     ROOM_CONTEXT_LIMIT,
@@ -67,7 +70,14 @@ const buildPromptMessages = async (
 
       return {
         role: "user",
-        content: formatHumanMessage(message.senderUser?.name, message.content),
+        content: formatHumanMessage(
+          message.senderUser?.name,
+          message.messageType === "image" && !message.content
+            ? "[shared image]"
+            : message.messageType === "voice" && message.audioTranscript
+              ? message.audioTranscript
+              : message.content,
+        ),
       };
     });
 
@@ -77,20 +87,48 @@ const buildPromptMessages = async (
     throw new Error("AI invocation message must contain a prompt");
   }
 
-  return [
-    {
-      role: "system",
-      content: AI_SYSTEM_PROMPT,
-    },
-    ...conversationHistory,
-    {
-      role: "user",
-      content: formatHumanMessage(
-        triggerMessage.senderUser?.name,
-        cleanedTriggerContent,
-      ),
-    },
-  ];
+  const recentTriggerImages = contextMessages
+    .filter(
+      (message) =>
+        message.sender === "human" &&
+        message.senderUserId === triggerMessage.senderUserId &&
+        message.messageType === "image" &&
+        message.imageUrl &&
+        message.metadata &&
+        typeof message.metadata === "object" &&
+        "storagePath" in message.metadata &&
+        typeof message.metadata.storagePath === "string",
+    )
+    .slice(-4);
+
+  const images = await Promise.all(
+    recentTriggerImages.map(async (message) => {
+      const storagePath = (message.metadata as { storagePath: string }).storagePath;
+
+      return storageService.downloadChatImageAsBase64(storagePath);
+    }),
+  );
+
+  return {
+    messages: [
+      {
+        role: "system",
+        content: AI_SYSTEM_PROMPT,
+      },
+      ...conversationHistory,
+      {
+        role: "user",
+        content: formatHumanMessage(
+          triggerMessage.senderUser?.name,
+          cleanedTriggerContent,
+        ),
+      },
+    ],
+    images: images.map((image) => ({
+      imageBase64: image.base64,
+      mimeType: image.mimeType,
+    })),
+  };
 };
 
 type StreamAssistantReplyInput = {
@@ -110,7 +148,7 @@ export const aiService = {
   }: StreamAssistantReplyInput) => {
     await assertActiveRoomMembership(roomId, actorUserId);
 
-    const promptMessages = await buildPromptMessages(roomId, triggerMessageId);
+    const promptPayload = await buildPromptPayload(roomId, triggerMessageId);
     const aiClient = getAiClient();
 
     let resolveMessage:
@@ -130,7 +168,8 @@ export const aiService = {
 
       try {
         for await (const chunk of aiClient.streamText({
-          messages: promptMessages,
+          messages: promptPayload.messages,
+          images: promptPayload.images,
         })) {
           if (!chunk.text) {
             continue;

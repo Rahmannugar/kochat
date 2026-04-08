@@ -52,26 +52,26 @@ export const RoomListPanel = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" className="justify-start rounded-full">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button asChild variant="outline" className="justify-start rounded-full px-4">
             <Link href="/dashboard#start-chat">
               <UserCirclePlusIcon size={18} weight="bold" />
               New chat
             </Link>
           </Button>
-          <Button asChild className="justify-start rounded-full">
+          <Button asChild className="justify-start rounded-full px-4">
             <Link href="/dashboard#create-group">
               <UsersThreeIcon size={18} weight="bold" />
               New group
             </Link>
           </Button>
-          <Button asChild variant="outline" className="justify-start rounded-full">
+          <Button asChild variant="outline" className="justify-start rounded-full px-4">
             <Link href="/dashboard#join-group">
               <PlusIcon size={18} weight="bold" />
               Join group
             </Link>
           </Button>
-          <Button asChild variant="outline" className="justify-start rounded-full">
+          <Button asChild variant="outline" className="justify-start rounded-full px-4">
             <Link href="/profile">
               <GearSixIcon size={18} weight="bold" />
               Profile

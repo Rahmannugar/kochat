@@ -81,6 +81,7 @@ export const useAiStream = (roomId?: string) => {
 
             if (payload.type === "done") {
               setMessageId(payload.messageId)
+              setStreamedText("")
               setIsStreaming(false)
               abortControllerRef.current = null
               return payload

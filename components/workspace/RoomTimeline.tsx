@@ -1,10 +1,9 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import {
   CircleNotchIcon,
-  LightningIcon,
-  RobotIcon,
   UsersThreeIcon,
   WifiHighIcon,
   WifiSlashIcon,
@@ -65,14 +64,22 @@ const getConnectionLabel = (
 const MessageBubble = ({
   message,
   isOwnMessage,
+  currentUserId,
 }: {
   message: RoomEventMessage
   isOwnMessage: boolean
+  currentUserId: string
 }) => {
   const senderName =
     message.sender === "ai"
       ? "Kochat AI"
       : message.senderUser?.name || message.senderUser?.username || "Unknown user"
+  const senderProfileHref =
+    message.sender === "human" && message.senderUser?.id
+      ? message.senderUser.id === currentUserId
+        ? "/profile"
+        : `/users/${message.senderUser.id}`
+      : null
 
   return (
     <div
@@ -82,15 +89,39 @@ const MessageBubble = ({
       )}
     >
       {!isOwnMessage ? (
-        <Avatar size="sm" className="mt-1">
-          <AvatarImage
-            src={message.sender === "human" ? (message.senderUser?.image ?? undefined) : undefined}
-            alt={senderName}
-          />
-          <AvatarFallback className={cn(message.sender === "ai" && "bg-primary/12 text-primary")}>
-            {message.sender === "ai" ? <RobotIcon size={12} weight="fill" /> : getInitials(senderName)}
-          </AvatarFallback>
-        </Avatar>
+        senderProfileHref ? (
+          <Link href={senderProfileHref} className="mt-1 block transition-opacity hover:opacity-80">
+            <Avatar size="sm">
+              <AvatarImage
+                src={message.sender === "human" ? (message.senderUser?.image ?? undefined) : undefined}
+                alt={senderName}
+              />
+              <AvatarFallback
+                className={cn(
+                  message.sender === "ai" &&
+                    "bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] font-semibold text-white",
+                )}
+              >
+                {message.sender === "ai" ? "AI" : getInitials(senderName)}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+        ) : (
+          <Avatar size="sm" className="mt-1">
+            <AvatarImage
+              src={message.sender === "human" ? (message.senderUser?.image ?? undefined) : undefined}
+              alt={senderName}
+            />
+            <AvatarFallback
+              className={cn(
+                message.sender === "ai" &&
+                  "bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] font-semibold text-white",
+              )}
+            >
+              {message.sender === "ai" ? "AI" : getInitials(senderName)}
+            </AvatarFallback>
+          </Avatar>
+        )
       ) : null}
 
       <div
@@ -111,8 +142,16 @@ const MessageBubble = ({
         >
           {!isOwnMessage ? (
             <div className="mb-1 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] opacity-70">
-              <span>{senderName}</span>
-              {message.sender === "ai" ? <LightningIcon size={12} weight="fill" /> : null}
+              {senderProfileHref ? (
+                <Link
+                  href={senderProfileHref}
+                  className="transition-opacity hover:opacity-70"
+                >
+                  {senderName}
+                </Link>
+              ) : (
+                <span>{senderName}</span>
+              )}
             </div>
           ) : null}
 
@@ -162,10 +201,12 @@ const MessageBubble = ({
       </div>
 
       {isOwnMessage ? (
-        <Avatar size="sm" className="mt-1">
-          <AvatarImage src={message.senderUser?.image ?? undefined} alt={senderName} />
-          <AvatarFallback>{getInitials(senderName)}</AvatarFallback>
-        </Avatar>
+        <Link href="/profile" className="mt-1 block transition-opacity hover:opacity-80">
+          <Avatar size="sm">
+            <AvatarImage src={message.senderUser?.image ?? undefined} alt={senderName} />
+            <AvatarFallback>{getInitials(senderName)}</AvatarFallback>
+          </Avatar>
+        </Link>
       ) : null}
     </div>
   )
@@ -195,7 +236,9 @@ export const RoomTimeline = ({
   }, [messagesQuery.data])
 
   const otherTypingUsers = typingUsers.filter((typingUser) => typingUser.userId !== user.id)
-  const activeOtherUsers = activeUsers.filter((activeUser) => activeUser.userId !== user.id)
+  const totalActiveUsers = activeUsers.some((activeUser) => activeUser.userId === user.id)
+    ? activeUsers.length
+    : activeUsers.length + 1
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -209,7 +252,7 @@ export const RoomTimeline = ({
         </Badge>
         <Badge variant="outline" className="h-7 rounded-full px-3">
           <UsersThreeIcon size={12} weight="bold" />
-          {activeOtherUsers.length} active
+          {totalActiveUsers} active
         </Badge>
         {otherTypingUsers.length > 0 ? (
           <Badge variant="outline" className="h-7 rounded-full px-3">
@@ -252,6 +295,7 @@ export const RoomTimeline = ({
                   key={message.id}
                   message={message}
                   isOwnMessage={message.sender === "human" && message.senderUserId === user.id}
+                  currentUserId={user.id}
                 />
               ))
             ) : (
@@ -266,7 +310,7 @@ export const RoomTimeline = ({
               </div>
             )}
 
-            {isAiStreaming || streamedAiText ? (
+            {isAiStreaming && streamedAiText ? (
               <MessageBubble
                 message={{
                   id: "streaming-ai-message",
@@ -284,6 +328,7 @@ export const RoomTimeline = ({
                   senderUser: null,
                 }}
                 isOwnMessage={false}
+                currentUserId={user.id}
               />
             ) : null}
           </div>

@@ -59,6 +59,7 @@ export class GeminiAiClient implements AiClient {
 
   async generateText({
     messages,
+    images,
     model,
     temperature,
     maxOutputTokens,
@@ -72,7 +73,15 @@ export class GeminiAiClient implements AiClient {
     const systemInstruction = toSystemInstruction(messages)
     const response = await this.client.models.generateContent({
       model: model || this.defaultModel,
-      contents: prompt,
+      contents:
+        images && images.length > 0
+          ? createUserContent([
+              prompt,
+              ...images.map((image) =>
+                createPartFromBase64(image.imageBase64, image.mimeType),
+              ),
+            ])
+          : prompt,
       config: {
         ...(systemInstruction ? { systemInstruction } : {}),
         ...(temperature !== undefined ? { temperature } : {}),
@@ -89,6 +98,7 @@ export class GeminiAiClient implements AiClient {
 
   async *streamText({
     messages,
+    images,
     model,
     temperature,
     maxOutputTokens,
@@ -102,7 +112,15 @@ export class GeminiAiClient implements AiClient {
     const systemInstruction = toSystemInstruction(messages)
     const response = await this.client.models.generateContentStream({
       model: model || this.defaultModel,
-      contents: prompt,
+      contents:
+        images && images.length > 0
+          ? createUserContent([
+              prompt,
+              ...images.map((image) =>
+                createPartFromBase64(image.imageBase64, image.mimeType),
+              ),
+            ])
+          : prompt,
       config: {
         ...(systemInstruction ? { systemInstruction } : {}),
         ...(temperature !== undefined ? { temperature } : {}),

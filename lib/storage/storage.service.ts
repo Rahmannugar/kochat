@@ -128,6 +128,28 @@ const uploadBufferAsset = async ({
   }
 }
 
+const downloadAssetAsBase64 = async ({
+  bucket,
+  path,
+}: {
+  bucket: string
+  path: string
+}) => {
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.storage.from(bucket).download(path)
+
+  if (error || !data) {
+    throw new HttpError(500, "Failed to load stored file")
+  }
+
+  const buffer = Buffer.from(await data.arrayBuffer())
+
+  return {
+    base64: buffer.toString("base64"),
+    mimeType: data.type || "application/octet-stream",
+  }
+}
+
 const buildAvatarPath = (userId: string, fileName: string) =>
   `${userId}/${Date.now()}-${sanitizeFileName(fileName)}`
 
@@ -255,6 +277,13 @@ export const storageService = {
       path: buildChatAudioPath(roomId, fileOwnerId, fileNameFromMimeType(mimeType)),
       buffer,
       contentType: mimeType,
+    })
+  },
+
+  downloadChatImageAsBase64: async (path: string) => {
+    return downloadAssetAsBase64({
+      bucket: CHAT_IMAGE_BUCKET,
+      path,
     })
   },
 }
