@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
   CircleNotchIcon,
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRoomMessages } from "@/lib/rooms/useRoomMessages"
 import { useRoomPresence } from "@/lib/rooms/useRoomPresence"
+import { apiClient } from "@/lib/utils/client"
 import type { RoomEventMessage } from "@/lib/messages/message.client.types"
 import type { RoomListItem } from "@/lib/rooms/room.client.types"
 import type { AuthUser } from "@/lib/auth/auth.types"
@@ -67,6 +68,24 @@ const getConnectionLabel = (
     default:
       return "Idle"
   }
+}
+
+const getReceiptLabel = (message: RoomEventMessage) => {
+  const receiptSummary = message.receiptSummary
+
+  if (!receiptSummary) {
+    return null
+  }
+
+  if (receiptSummary.recipientCount <= 1) {
+    return receiptSummary.status === "read" ? "Read" : "Delivered"
+  }
+
+  if (receiptSummary.status === "read") {
+    return `Read by ${receiptSummary.readCount}`
+  }
+
+  return `Delivered to ${receiptSummary.recipientCount}`
 }
 
 const renderMessageContent = (content: string, isOwnMessage: boolean) => {
@@ -231,9 +250,17 @@ const MessageBubble = ({
           ) : null}
         </div>
 
-        <p className="px-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          {formatTime(message.createdAt)}
-        </p>
+        <div
+          className={cn(
+            "px-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground",
+            isOwnMessage ? "flex items-center justify-end gap-2" : undefined,
+          )}
+        >
+          <span>{formatTime(message.createdAt)}</span>
+          {isOwnMessage && message.sender === "human" ? (
+            <span>{getReceiptLabel(message)}</span>
+          ) : null}
+        </div>
       </div>
 
       {isOwnMessage ? (
@@ -262,6 +289,8 @@ export const RoomTimeline = ({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hasSnappedToLatestRef = useRef(false)
   const previousLatestMessageIdRef = useRef<string | null>(null)
+  const lastMarkedReadMessageIdRef = useRef<string | null>(null)
+  const [isNearBottom, setIsNearBottom] = useState(true)
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   })
@@ -286,7 +315,32 @@ export const RoomTimeline = ({
   useEffect(() => {
     hasSnappedToLatestRef.current = false
     previousLatestMessageIdRef.current = null
+    lastMarkedReadMessageIdRef.current = null
+    setIsNearBottom(true)
   }, [room.id])
+
+  useEffect(() => {
+    const viewport = containerRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    )
+
+    if (!viewport) {
+      return
+    }
+
+    const updatePosition = () => {
+      const distanceFromBottom =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight
+      setIsNearBottom(distanceFromBottom <= 80)
+    }
+
+    updatePosition()
+    viewport.addEventListener("scroll", updatePosition, { passive: true })
+
+    return () => {
+      viewport.removeEventListener("scroll", updatePosition)
+    }
+  }, [room.id, messages.length])
 
   useEffect(() => {
     if (hasSnappedToLatestRef.current || messages.length === 0) {
@@ -369,6 +423,36 @@ export const RoomTimeline = ({
       })
     })
   }, [messages, user.id])
+
+  useEffect(() => {
+    const latestMessage = messages[messages.length - 1]
+
+    if (!latestMessage || !isNearBottom || latestMessage.id === lastMarkedReadMessageIdRef.current) {
+      return
+    }
+
+    const viewport = containerRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    )
+
+    if (!viewport) {
+      return
+    }
+
+    if (document.hidden) {
+      return
+    }
+
+    lastMarkedReadMessageIdRef.current = latestMessage.id
+
+    void apiClient.post(`/rooms/${room.id}/read`, {
+      messageId: latestMessage.id,
+    }).catch(() => {
+      if (lastMarkedReadMessageIdRef.current === latestMessage.id) {
+        lastMarkedReadMessageIdRef.current = null
+      }
+    })
+  }, [isNearBottom, messages, room.id])
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">

@@ -22,6 +22,8 @@ type UpdateMembershipInput = {
   userId: string
   archivedAt?: Date | null
   role?: "owner" | "member"
+  lastReadMessageId?: string | null
+  lastReadAt?: Date | null
 }
 
 export const roomRepository = {
@@ -151,17 +153,35 @@ export const roomRepository = {
     })
   },
 
-  updateMembership: async ({ roomId, userId, archivedAt, role }: UpdateMembershipInput) => {
+  updateMembership: async ({
+    roomId,
+    userId,
+    archivedAt,
+    role,
+    lastReadMessageId,
+    lastReadAt,
+  }: UpdateMembershipInput) => {
     const [membership] = await db
       .update(roomMembers)
       .set({
         ...(archivedAt !== undefined ? { archivedAt } : {}),
         ...(role ? { role } : {}),
+        ...(lastReadMessageId !== undefined ? { lastReadMessageId } : {}),
+        ...(lastReadAt !== undefined ? { lastReadAt } : {}),
       })
       .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
       .returning()
 
     return membership
+  },
+
+  listActiveMembershipsByRoomId: async (roomId: string) => {
+    return db.query.roomMembers.findMany({
+      where: and(eq(roomMembers.roomId, roomId), isNull(roomMembers.archivedAt)),
+      with: {
+        user: true,
+      },
+    })
   },
 
   listMembersByRoomId: async ({

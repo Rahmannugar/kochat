@@ -29,3 +29,7 @@ export const createMessageSchema = z.object({
   audioTranscript: z.string().trim().max(5000, "Transcript is too long").nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
+
+export const markRoomReadSchema = z.object({
+  messageId: z.uuid("Message id must be a valid UUID"),
+})

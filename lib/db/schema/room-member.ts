@@ -23,6 +23,8 @@ export const roomMembers = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     role: roomMemberRoleEnum("role").notNull().default("member"),
     archivedAt: timestamp("archived_at", { mode: "date" }),
+    lastReadMessageId: uuid("last_read_message_id"),
+    lastReadAt: timestamp("last_read_at", { mode: "date" }),
     joinedAt: timestamp("joined_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [

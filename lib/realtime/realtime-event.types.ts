@@ -39,7 +39,19 @@ export type PresenceUpdatedEvent = {
   occurredAt: string
 }
 
+export type ReceiptsUpdatedEvent = {
+  roomId: string
+  type: "receipts.updated"
+  payload: {
+    userId: string
+    latestReadMessageId: string
+    latestReadAt: string
+  }
+  occurredAt: string
+}
+
 export type RoomEventPayload =
   | MessageCreatedEvent
   | TypingUpdatedEvent
   | PresenceUpdatedEvent
+  | ReceiptsUpdatedEvent

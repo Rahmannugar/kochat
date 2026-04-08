@@ -29,6 +29,13 @@
       "when": 1775657945772,
       "tag": "0003_add-room-list-pagination-index",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775679643139,
+      "tag": "0004_add-room-member-read-state",
+      "breakpoints": true
     }
   ]
 }

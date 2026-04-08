@@ -63,6 +63,13 @@ export const useRoomEvents = (roomId?: string) => {
         return
       }
 
+      if (payload.type === "receipts.updated") {
+        void queryClient.invalidateQueries({
+          queryKey: roomMessagesQueryKey(roomId),
+        })
+        return
+      }
+
       if (payload.type === "message.created") {
         queryClient.setQueryData<
           { pages: PaginatedMessages[]; pageParams: Array<string | null> } | undefined

@@ -133,23 +133,26 @@ export const messageRepository = {
       throw new Error("Invalid search cursor")
     }
 
-    return db.query.messages.findMany({
-      where: and(
-        eq(messages.roomId, roomId),
-        or(
-          ilike(messages.content, `%${query}%`),
-          ilike(messages.audioTranscript, `%${query}%`),
-        ),
-        cursorMessage
-          ? or(
-              lt(messages.createdAt, cursorMessage.createdAt),
-              and(
-                eq(messages.createdAt, cursorMessage.createdAt),
-                lt(messages.id, cursorMessage.id),
-              ),
-            )
-          : undefined,
+    const baseSearchPredicate = and(
+      eq(messages.roomId, roomId),
+      or(
+        ilike(messages.content, `%${query}%`),
+        ilike(messages.audioTranscript, `%${query}%`),
       ),
+    )
+
+    const cursorPredicate = cursorMessage
+      ? or(
+          lt(messages.createdAt, cursorMessage.createdAt),
+          and(
+            eq(messages.createdAt, cursorMessage.createdAt),
+            lt(messages.id, cursorMessage.id),
+          ),
+        )
+      : undefined
+
+    return db.query.messages.findMany({
+      where: cursorPredicate ? and(baseSearchPredicate, cursorPredicate) : baseSearchPredicate,
       with: {
         senderUser: true,
       },

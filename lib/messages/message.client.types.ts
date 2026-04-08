@@ -11,6 +11,11 @@ export type RoomEventMessage = {
   metadata: Record<string, unknown> | null
   createdAt: string | Date
   updatedAt: string | Date
+  receiptSummary?: {
+    recipientCount: number
+    readCount: number
+    status: "sent" | "delivered" | "read"
+  } | null
   senderUser?: {
     id: string
     name: string | null

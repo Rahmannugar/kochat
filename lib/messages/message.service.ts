@@ -3,6 +3,7 @@ import { roomRepository } from "@/lib/rooms/room.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
 import type {
   SearchMessagePage,
+  RoomEventMessage,
   SearchMessageResult,
 } from "@/lib/messages/message.client.types";
 
@@ -39,6 +40,71 @@ const assertActiveRoomMembership = async (roomId: string, userId: string) => {
 };
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+const hasMemberReadMessage = (
+  membership: {
+    lastReadAt: Date | null
+    lastReadMessageId: string | null
+  },
+  message: {
+    id: string
+    createdAt: string | Date
+  },
+) => {
+  if (!membership.lastReadAt) {
+    return false
+  }
+
+  const messageCreatedAt =
+    message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt)
+
+  if (membership.lastReadAt.getTime() > messageCreatedAt.getTime()) {
+    return true
+  }
+
+  return (
+    membership.lastReadAt.getTime() === messageCreatedAt.getTime() &&
+    membership.lastReadMessageId === message.id
+  )
+}
+
+const attachReceiptSummary = (
+  message: RoomEventMessage,
+  memberships: Array<{
+    userId: string
+    lastReadAt: Date | null
+    lastReadMessageId: string | null
+  }>,
+): RoomEventMessage => {
+  if (message.sender !== "human" || !message.senderUserId) {
+    return {
+      ...message,
+      receiptSummary: null,
+    }
+  }
+
+  const recipientMemberships = memberships.filter(
+    (membership) => membership.userId !== message.senderUserId,
+  )
+  const recipientCount = recipientMemberships.length
+  const readCount = recipientMemberships.filter((membership) =>
+    hasMemberReadMessage(membership, message),
+  ).length
+
+  return {
+    ...message,
+    receiptSummary: {
+      recipientCount,
+      readCount,
+      status:
+        recipientCount === 0
+          ? "sent"
+          : readCount === recipientCount
+            ? "read"
+            : "delivered",
+    },
+  }
+}
 
 const buildMatchPreview = (
   field: "content" | "audioTranscript",
@@ -94,9 +160,12 @@ export const messageService = {
       limit,
       cursorId: cursor,
     });
+    const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
 
     const hasNextPage = page.length > limit;
-    const items = hasNextPage ? page.slice(0, limit) : page;
+    const items = (hasNextPage ? page.slice(0, limit) : page).map((message) =>
+      attachReceiptSummary(message, memberships),
+    );
     const nextCursor = hasNextPage ? (items.at(-1)?.id ?? null) : null;
 
     return {
@@ -118,6 +187,7 @@ export const messageService = {
     await assertActiveRoomMembership(roomId, userId);
 
     const normalizedQuery = query.trim()
+    const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
     const page = await messageRepository.searchByRoomId({
       roomId,
       query: normalizedQuery,
@@ -128,6 +198,7 @@ export const messageService = {
     const items = hasNextPage ? page.slice(0, limit) : page
 
     const results = items
+      .map((message) => attachReceiptSummary(message, memberships))
       .map<SearchMessageResult | null>((message) => {
         const matches = [
           buildMatchPreview("content", message.content, normalizedQuery),
@@ -179,20 +250,23 @@ export const messageService = {
     });
 
     const message = await messageRepository.findDetailedById(createdMessage.id);
+    const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
 
     if (!message) {
       throw new Error("Message could not be loaded after creation");
     }
 
+    const enrichedMessage = attachReceiptSummary(message, memberships)
+
     await roomEvents.publish({
       roomId,
       type: "message.created",
       payload: {
-        message,
+        message: enrichedMessage,
       },
     });
 
-    return message;
+    return enrichedMessage;
   },
 
   createAiMessage: async ({
@@ -219,19 +293,76 @@ export const messageService = {
     });
 
     const message = await messageRepository.findDetailedById(createdMessage.id);
+    const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
 
     if (!message) {
       throw new Error("AI message could not be loaded after creation");
     }
 
+    const enrichedMessage = attachReceiptSummary(message, memberships)
+
     await roomEvents.publish({
       roomId,
       type: "message.created",
       payload: {
-        message,
+        message: enrichedMessage,
       },
     });
 
-    return message;
+    return enrichedMessage;
+  },
+
+  markRoomRead: async ({
+    roomId,
+    userId,
+    messageId,
+  }: {
+    roomId: string
+    userId: string
+    messageId: string
+  }) => {
+    const membership = await assertActiveRoomMembership(roomId, userId)
+    const message = await messageRepository.findById(messageId)
+
+    if (!message || message.roomId !== roomId) {
+      throw new Error("Message not found in this room")
+    }
+
+    const nextReadAt = message.createdAt
+    const currentReadAt = membership.lastReadAt
+
+    if (
+      currentReadAt &&
+      (currentReadAt.getTime() > nextReadAt.getTime() ||
+        (currentReadAt.getTime() === nextReadAt.getTime() &&
+          membership.lastReadMessageId === message.id))
+    ) {
+      return {
+        latestReadMessageId: membership.lastReadMessageId,
+        latestReadAt: currentReadAt.toISOString(),
+      }
+    }
+
+    await roomRepository.updateMembership({
+      roomId,
+      userId,
+      lastReadMessageId: message.id,
+      lastReadAt: nextReadAt,
+    })
+
+    await roomEvents.publish({
+      roomId,
+      type: "receipts.updated",
+      payload: {
+        userId,
+        latestReadMessageId: message.id,
+        latestReadAt: nextReadAt.toISOString(),
+      },
+    })
+
+    return {
+      latestReadMessageId: message.id,
+      latestReadAt: nextReadAt.toISOString(),
+    }
   },
 };
