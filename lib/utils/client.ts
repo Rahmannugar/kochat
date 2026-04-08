@@ -91,8 +91,8 @@ export class ApiClient {
     return this.request<T>(path, { ...options, method: "PATCH", body });
   }
 
-  delete<T>(path: string, options?: Omit<ApiClientOptions, "method" | "body">) {
-    return this.request<T>(path, { ...options, method: "DELETE" });
+  delete<T>(path: string, body?: ApiClientOptions["body"], options?: ApiClientOptions) {
+    return this.request<T>(path, { ...options, method: "DELETE", body });
   }
 }
 

@@ -4,6 +4,7 @@ export * from "./session";
 export * from "./account";
 export * from "./verification";
 export * from "./ai-usage";
+export * from "./push-subscription";
 export * from "./room";
 export * from "./room-member";
 export * from "./message";

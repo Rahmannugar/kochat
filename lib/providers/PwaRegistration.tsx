@@ -7,7 +7,7 @@ export const PwaRegistration = () => {
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
-      process.env.NODE_ENV !== "production"
+      (process.env.NODE_ENV !== "production" && window.location.hostname !== "localhost")
     ) {
       return
     }

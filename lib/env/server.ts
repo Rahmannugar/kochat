@@ -32,6 +32,9 @@ type ServerEnv = {
   AI_PROVIDER?: string
   AI_API_KEY?: string
   AI_MODEL?: string
+  VAPID_SUBJECT?: string
+  VAPID_PUBLIC_KEY?: string
+  VAPID_PRIVATE_KEY?: string
 }
 
 let cachedEnv: ServerEnv | undefined;
@@ -84,6 +87,9 @@ export const getServerEnv = () => {
     AI_PROVIDER: process.env.AI_PROVIDER,
     AI_API_KEY: process.env.AI_API_KEY,
     AI_MODEL: process.env.AI_MODEL,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
   }
 
   return cachedEnv

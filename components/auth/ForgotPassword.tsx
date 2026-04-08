@@ -1,33 +1,34 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowCounterClockwiseIcon,
   EyeClosedIcon,
   EyeIcon,
   PasswordIcon,
-} from "@phosphor-icons/react"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { toast } from "sonner"
+} from "@phosphor-icons/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
   forgotPasswordSchema,
   type ForgotPasswordValues,
-} from "@/lib/auth/auth.schema"
-import { useEmailOtp } from "@/lib/auth/useEmailOtp"
-import { AuthLayout } from "@/components/auth/AuthLayout"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/lib/auth/auth.schema";
+import { useEmailOtp } from "@/lib/auth/useEmailOtp";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const ForgotPasswordForm = () => {
-  const router = useRouter()
-  const { requestPasswordReset, resetPassword, isPending, error } = useEmailOtp()
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [hasRequestedCode, setHasRequestedCode] = useState(false)
+  const router = useRouter();
+  const { requestPasswordReset, resetPassword, isPending, error } =
+    useEmailOtp();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [hasRequestedCode, setHasRequestedCode] = useState(false);
   const form = useForm<ForgotPasswordValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -36,32 +37,32 @@ export const ForgotPasswordForm = () => {
       password: "",
       confirmPassword: "",
     },
-  })
+  });
 
-  const email = form.watch("email")
+  const email = form.watch("email");
 
   const handleRequestCode = async () => {
-    const isEmailValid = await form.trigger("email")
+    const isEmailValid = await form.trigger("email");
 
     if (!isEmailValid) {
-      return
+      return;
     }
 
-    await requestPasswordReset(email)
-    setHasRequestedCode(true)
-    toast.success("If that email can reset a password, a code has been sent.")
-  }
+    await requestPasswordReset(email);
+    setHasRequestedCode(true);
+    toast.success("If that email can reset a password, a code has been sent.");
+  };
 
   const handleSubmit = form.handleSubmit(async (values) => {
     await resetPassword({
       email: values.email,
       otp: values.otp,
       password: values.password,
-    })
+    });
 
-    toast.success("Password updated. You can sign in now.")
-    router.replace("/sign-in")
-  })
+    toast.success("Password updated. You can sign in now.");
+    router.replace("/sign-in");
+  });
 
   return (
     <AuthLayout
@@ -150,7 +151,11 @@ export const ForgotPasswordForm = () => {
                 className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+                {showPassword ? (
+                  <EyeClosedIcon size={18} />
+                ) : (
+                  <EyeIcon size={18} />
+                )}
               </button>
             </div>
             {form.formState.errors.password ? (
@@ -174,9 +179,15 @@ export const ForgotPasswordForm = () => {
                 type="button"
                 onClick={() => setShowConfirmPassword((current) => !current)}
                 className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
               >
-                {showConfirmPassword ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+                {showConfirmPassword ? (
+                  <EyeClosedIcon size={18} />
+                ) : (
+                  <EyeIcon size={18} />
+                )}
               </button>
             </div>
             {form.formState.errors.confirmPassword ? (
@@ -202,7 +213,6 @@ export const ForgotPasswordForm = () => {
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        Remembered it?{" "}
         <Link
           href="/sign-in"
           className="font-medium text-foreground underline underline-offset-4"
@@ -211,5 +221,5 @@ export const ForgotPasswordForm = () => {
         </Link>
       </p>
     </AuthLayout>
-  )
-}
+  );
+};

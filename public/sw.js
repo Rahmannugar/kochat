@@ -82,3 +82,41 @@ self.addEventListener("fetch", (event) => {
     }),
   )
 })
+
+self.addEventListener("push", (event) => {
+  if (!event.data) {
+    return
+  }
+
+  const payload = event.data.json()
+  const title = payload.title || "Kochat"
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body,
+      icon: payload.icon || "/images/kochat-logo.png",
+      badge: payload.badge || "/images/kochat-logo.png",
+      tag: payload.tag,
+      data: payload.data,
+    }),
+  )
+})
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+
+  const targetUrl = event.notification.data?.url || "/dashboard"
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const matchingClient = clients.find((client) => "focus" in client)
+
+      if (matchingClient) {
+        matchingClient.navigate(targetUrl)
+        return matchingClient.focus()
+      }
+
+      return self.clients.openWindow(targetUrl)
+    }),
+  )
+})
