@@ -18,15 +18,17 @@ export const GET = async (request: Request, context: RouteContext) => {
     const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const { searchParams } = new URL(request.url);
-    const { query, limit } = searchRoomMessagesQuerySchema.parse({
+    const { query, limit, cursor } = searchRoomMessagesQuerySchema.parse({
       query: searchParams.get("query"),
       limit: searchParams.get("limit"),
+      cursor: searchParams.get("cursor"),
     });
     const messages = await messageService.searchRoomMessages(
       roomId,
       sessionUser.id,
       query,
       limit,
+      cursor,
     );
 
     return success(messages);

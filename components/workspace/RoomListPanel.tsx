@@ -88,7 +88,7 @@ export const RoomListPanel = ({
   };
 
   return (
-    <Card className="min-w-0 rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
+    <Card className="min-w-0 overflow-hidden rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
       <CardHeader className="gap-4 pb-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11 border border-border/60">
@@ -170,15 +170,15 @@ export const RoomListPanel = ({
 
       {hideRoomsList ? null : (
         <CardContent className="space-y-4 pt-0">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium">Your conversations</p>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <p className="truncate text-sm font-medium">Your conversations</p>
             <span className="shrink-0 text-xs text-muted-foreground">
               {isLoading ? "Loading..." : `${memberships.length} shown`}
             </span>
           </div>
 
-          <ScrollArea className="h-[520px] w-full pr-3">
-            <div className="space-y-2">
+          <ScrollArea className="h-[520px] w-full">
+            <div className="min-w-0 space-y-2 pr-3">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -196,13 +196,13 @@ export const RoomListPanel = ({
                     key={room.id}
                     href={`/rooms/${room.id}`}
                     className={cn(
-                      "block min-w-0 w-full rounded-[1.5rem] border px-4 py-3 text-left transition-colors",
+                      "block w-full min-w-0 overflow-hidden rounded-[1.5rem] border px-4 py-3 text-left transition-colors",
                       isSelected
                         ? "border-primary/40 bg-primary/10"
                         : "border-border/60 bg-background hover:bg-muted/40",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {room.type === "group" ? (
@@ -220,14 +220,14 @@ export const RoomListPanel = ({
                           )}
                           <p className="truncate font-medium">{room.name}</p>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                        <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
                           {room.description ||
                             (room.type === "group"
                               ? "Private group room joined by secure code."
                               : "Direct conversation between two members.")}
                         </p>
                       </div>
-                      <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                         {room.type}
                       </span>
                     </div>

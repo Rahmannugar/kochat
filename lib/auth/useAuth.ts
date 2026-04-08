@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import type { SignInValues, SignUpValues } from "@/lib/auth/auth.schema"
 import { authClient } from "@/lib/auth/auth-client"
 import { useAuthStore } from "@/lib/auth/auth.store"
 import type { AuthSession } from "@/lib/auth/auth.types"
 
 export const useAuth = () => {
+  const router = useRouter()
   const sessionQuery = authClient.useSession()
   const user = useAuthStore((state) => state.user)
   const session = useAuthStore((state) => state.session)
@@ -35,6 +37,13 @@ export const useAuth = () => {
     }
 
     return authClient.signUp.email(signUpValues)
+  }
+
+  const signOut = async () => {
+    await authClient.signOut()
+    clearSession()
+    router.replace("/sign-in")
+    router.refresh()
   }
 
   return {
@@ -73,6 +82,6 @@ export const useAuth = () => {
         otp,
         name,
       }),
-    signOut: () => authClient.signOut(),
+    signOut,
   }
 }

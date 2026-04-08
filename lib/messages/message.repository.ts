@@ -112,7 +112,27 @@ export const messageRepository = {
     return page
   },
 
-  searchByRoomId: async (roomId: string, query: string, limit = 20) => {
+  searchByRoomId: async ({
+    roomId,
+    query,
+    limit = 20,
+    cursorId,
+  }: {
+    roomId: string
+    query: string
+    limit?: number
+    cursorId?: string
+  }) => {
+    const cursorMessage = cursorId
+      ? await db.query.messages.findFirst({
+          where: eq(messages.id, cursorId),
+        })
+      : null
+
+    if (cursorId && (!cursorMessage || cursorMessage.roomId !== roomId)) {
+      throw new Error("Invalid search cursor")
+    }
+
     return db.query.messages.findMany({
       where: and(
         eq(messages.roomId, roomId),
@@ -120,12 +140,21 @@ export const messageRepository = {
           ilike(messages.content, `%${query}%`),
           ilike(messages.audioTranscript, `%${query}%`),
         ),
+        cursorMessage
+          ? or(
+              lt(messages.createdAt, cursorMessage.createdAt),
+              and(
+                eq(messages.createdAt, cursorMessage.createdAt),
+                lt(messages.id, cursorMessage.id),
+              ),
+            )
+          : undefined,
       ),
       with: {
         senderUser: true,
       },
-      orderBy: desc(messages.createdAt),
-      limit,
+      orderBy: [desc(messages.createdAt), desc(messages.id)],
+      limit: limit + 1,
     })
   },
 }

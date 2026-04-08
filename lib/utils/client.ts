@@ -1,3 +1,5 @@
+import { useAuthStore } from "@/lib/auth/auth.store"
+
 export type ApiClientOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown>;
 };
@@ -33,6 +35,18 @@ async function parseResponse(response: Response) {
   return response.text();
 }
 
+const handleUnauthorizedResponse = () => {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  useAuthStore.getState().clearSession()
+
+  if (!window.location.pathname.startsWith("/sign-in")) {
+    window.location.assign("/sign-in")
+  }
+}
+
 export class ApiClient {
   constructor(private readonly baseUrl = "") {}
 
@@ -51,6 +65,10 @@ export class ApiClient {
     const data = await parseResponse(response);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorizedResponse()
+      }
+
       throw new ApiError(
         typeof data === "string" ? data : "Request failed",
         response.status,

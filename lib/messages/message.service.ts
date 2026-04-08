@@ -1,7 +1,10 @@
 import { messageRepository } from "@/lib/messages/message.repository";
 import { roomRepository } from "@/lib/rooms/room.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
-import type { SearchMessageResult } from "@/lib/messages/message.client.types";
+import type {
+  SearchMessagePage,
+  SearchMessageResult,
+} from "@/lib/messages/message.client.types";
 
 type CreateHumanMessageInput = {
   roomId: string;
@@ -110,13 +113,21 @@ export const messageService = {
     userId: string,
     query: string,
     limit = 20,
-  ): Promise<SearchMessageResult[]> => {
+    cursor?: string,
+  ): Promise<SearchMessagePage> => {
     await assertActiveRoomMembership(roomId, userId);
 
     const normalizedQuery = query.trim()
-    const messages = await messageRepository.searchByRoomId(roomId, normalizedQuery, limit)
+    const page = await messageRepository.searchByRoomId({
+      roomId,
+      query: normalizedQuery,
+      limit,
+      cursorId: cursor,
+    })
+    const hasNextPage = page.length > limit
+    const items = hasNextPage ? page.slice(0, limit) : page
 
-    return messages
+    const results = items
       .map<SearchMessageResult | null>((message) => {
         const matches = [
           buildMatchPreview("content", message.content, normalizedQuery),
@@ -133,6 +144,14 @@ export const messageService = {
         }
       })
       .filter((value): value is SearchMessageResult => Boolean(value))
+
+    return {
+      items: results,
+      pageInfo: {
+        hasNextPage,
+        nextCursor: hasNextPage ? (items.at(-1)?.id ?? null) : null,
+      },
+    }
   },
 
   createHumanMessage: async ({

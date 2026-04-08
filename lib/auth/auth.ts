@@ -14,6 +14,10 @@ const env = getServerEnv()
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    disableSessionRefresh: true,
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

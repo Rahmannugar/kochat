@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   MagnifyingGlassIcon,
   QuotesIcon,
   WaveformIcon,
   XIcon,
 } from "@phosphor-icons/react"
+import { CursorPagination } from "@/components/shared/CursorPagination"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -47,9 +48,41 @@ export const RoomSearchPanel = ({
     query,
     enabled: isOpen,
   })
+  const pages = searchQuery.data?.pages ?? []
+  const [pageIndex, setPageIndex] = useState(0)
+  const results = pages[pageIndex]?.items ?? []
+  const canGoBack = pageIndex > 0
+  const canGoNext = pageIndex < pages.length - 1 || Boolean(searchQuery.hasNextPage)
+
+  useEffect(() => {
+    setPageIndex(0)
+  }, [query, roomId])
+
+  useEffect(() => {
+    if (pageIndex > 0 && pageIndex >= pages.length) {
+      setPageIndex(Math.max(0, pages.length - 1))
+    }
+  }, [pageIndex, pages.length])
+
+  const handleNextPage = async () => {
+    if (pageIndex < pages.length - 1) {
+      setPageIndex((current) => current + 1)
+      return
+    }
+
+    if (!searchQuery.hasNextPage || searchQuery.isFetchingNextPage) {
+      return
+    }
+
+    const result = await searchQuery.fetchNextPage()
+
+    if (result.data?.pages.length && pageIndex < result.data.pages.length - 1) {
+      setPageIndex((current) => current + 1)
+    }
+  }
 
   return (
-    <div className="rounded-[1.5rem] border border-border/60 bg-muted/15 p-3">
+    <div className="min-w-0 overflow-hidden rounded-[1.5rem] border border-border/60 bg-muted/15 p-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
           <MagnifyingGlassIcon
@@ -97,23 +130,23 @@ export const RoomSearchPanel = ({
                     className="h-20 rounded-[1rem] border border-border/50 bg-muted/25"
                   />
                 ))
-              ) : searchQuery.data && searchQuery.data.length > 0 ? (
-                searchQuery.data.map((result) => (
+              ) : results.length > 0 ? (
+                results.map((result) => (
                   <button
                     type="button"
                     key={result.message.id}
-                    className="block w-full rounded-[1rem] border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                    className="block w-full min-w-0 overflow-hidden rounded-[1rem] border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
                     onClick={() => {
                       onSelectMessage?.(result.message.id)
                     }}
                   >
-                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    <div className="mb-2 flex min-w-0 items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                       {result.matches[0]?.field === "audioTranscript" ? (
                         <WaveformIcon size={14} weight="bold" />
                       ) : (
                         <QuotesIcon size={14} weight="bold" />
                       )}
-                      <span>
+                      <span className="truncate">
                         {result.message.sender === "ai"
                           ? "Kochat AI"
                           : result.message.senderUser?.name || result.message.senderUser?.username || "Unknown user"}
@@ -127,6 +160,17 @@ export const RoomSearchPanel = ({
                   No messages matched that search.
                 </div>
               )}
+              {pages.length > 0 ? (
+                <CursorPagination
+                  canGoBack={canGoBack}
+                  canGoNext={canGoNext}
+                  isBusy={searchQuery.isFetchingNextPage}
+                  backLabel="Previous"
+                  nextLabel="Next"
+                  onBack={() => setPageIndex((current) => Math.max(0, current - 1))}
+                  onNext={() => void handleNextPage()}
+                />
+              ) : null}
             </div>
           </ScrollArea>
         </div>

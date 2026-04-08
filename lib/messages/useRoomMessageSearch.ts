@@ -1,7 +1,7 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import type { SearchMessageResult } from "@/lib/messages/message.client.types"
+import { useInfiniteQuery } from "@tanstack/react-query"
+import type { SearchMessagePage } from "@/lib/messages/message.client.types"
 import { apiClient } from "@/lib/utils/client"
 
 type ApiResponse<T> = {
@@ -29,17 +29,28 @@ export const useRoomMessageSearch = ({
 }) => {
   const normalizedQuery = query.trim()
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: roomId
       ? roomMessageSearchQueryKey(roomId, normalizedQuery)
       : ["rooms", "search", "disabled"],
     enabled: Boolean(roomId && normalizedQuery && enabled),
-    queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<SearchMessageResult[]>>(
-        `/rooms/${roomId}/messages/search?query=${encodeURIComponent(normalizedQuery)}&limit=${limit}`,
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
+      const searchParams = new URLSearchParams({
+        query: normalizedQuery,
+        limit: String(limit),
+      })
+
+      if (pageParam) {
+        searchParams.set("cursor", pageParam)
+      }
+
+      const response = await apiClient.get<ApiResponse<SearchMessagePage>>(
+        `/rooms/${roomId}/messages/search?${searchParams.toString()}`,
       )
 
       return response.data
     },
+    getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor ?? undefined,
   })
 }

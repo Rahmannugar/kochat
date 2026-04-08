@@ -18,6 +18,7 @@ export const roomMessagesQuerySchema = z.object({
 export const searchRoomMessagesQuerySchema = z.object({
   query: z.string().trim().min(1, "Enter a search query"),
   limit: optionalLimitSchema,
+  cursor: optionalCursorSchema,
 })
 
 export const createMessageSchema = z.object({

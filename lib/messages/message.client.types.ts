@@ -39,3 +39,11 @@ export type SearchMessageResult = {
   message: RoomEventMessage
   matches: SearchMessageMatch[]
 }
+
+export type SearchMessagePage = {
+  items: SearchMessageResult[]
+  pageInfo: {
+    hasNextPage: boolean
+    nextCursor: string | null
+  }
+}

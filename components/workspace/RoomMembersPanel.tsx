@@ -78,7 +78,7 @@ export const RoomMembersPanel = ({
   }
 
   return (
-    <div className="flex min-h-[580px] min-w-0 flex-col gap-4">
+    <div className="flex min-h-[580px] min-w-0 overflow-hidden flex-col gap-4">
       <div className="flex flex-col gap-3 rounded-[1.5rem] border border-border/60 bg-muted/15 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-semibold">
@@ -112,7 +112,7 @@ export const RoomMembersPanel = ({
                 <Link
                   key={member.id}
                   href={getProfileHref(member, currentUserId)}
-                  className="flex min-w-0 flex-col gap-3 rounded-[1.35rem] border border-border/60 bg-background/85 px-4 py-3 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex min-w-0 w-full overflow-hidden flex-col gap-3 rounded-[1.35rem] border border-border/60 bg-background/85 px-4 py-3 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar size="sm">
@@ -121,13 +121,13 @@ export const RoomMembersPanel = ({
                     </Avatar>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{member.user.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate break-all text-xs text-muted-foreground">
                         {member.user.username ? `@${member.user.username}` : member.user.email}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                         <WifiHighIcon size={12} weight="bold" />
