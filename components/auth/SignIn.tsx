@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/lib/auth/useAuth";
 import { signInSchema, type SignInValues } from "@/lib/auth/auth.schema";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { GitHubIcon } from "@/components/shared/GitHubIcon";
 import { GoogleIcon } from "@/components/shared/GoogleIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +21,11 @@ import { Label } from "@/components/ui/label";
 
 export const SignInForm = () => {
   const router = useRouter();
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGitHub, signInWithGoogle } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isGooglePending, startGoogleTransition] = useTransition();
+  const [isGitHubPending, startGitHubTransition] = useTransition();
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -54,6 +56,20 @@ export const SignInForm = () => {
       if (result?.error) {
         setErrorMessage(
           result.error.message ?? "Unable to continue with Google",
+        );
+      }
+    });
+  };
+
+  const handleGitHubSignIn = () => {
+    setErrorMessage("");
+
+    startGitHubTransition(async () => {
+      const result = await signInWithGitHub();
+
+      if (result?.error) {
+        setErrorMessage(
+          result.error.message ?? "Unable to continue with GitHub",
         );
       }
     });
@@ -152,16 +168,29 @@ export const SignInForm = () => {
         </div>
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-12 w-full rounded-2xl border-black/10 bg-white/78 dark:border-white/10 dark:bg-white/5"
-        onClick={handleGoogleSignIn}
-        disabled={isGooglePending}
-      >
-        <GoogleIcon className="size-[18px]" />
-        {isGooglePending ? "Redirecting..." : "Sign in with Google"}
-      </Button>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 w-full rounded-2xl border-black/10 bg-white/78 dark:border-white/10 dark:bg-white/5"
+          onClick={handleGoogleSignIn}
+          disabled={isGooglePending || isGitHubPending}
+        >
+          <GoogleIcon className="size-[18px]" />
+          {isGooglePending ? "Redirecting..." : "Google"}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 w-full rounded-2xl border-black/10 bg-white/78 dark:border-white/10 dark:bg-white/5"
+          onClick={handleGitHubSignIn}
+          disabled={isGooglePending || isGitHubPending}
+        >
+          <GitHubIcon className="size-[18px]" />
+          {isGitHubPending ? "Redirecting..." : "GitHub"}
+        </Button>
+      </div>
 
       <p className="text-center text-sm text-muted-foreground">
         New here?{" "}

@@ -26,17 +26,32 @@ export const useAuth = () => {
     clearSession()
   }, [clearSession, sessionQuery.data, sessionQuery.isPending, setSession])
 
+  const signUpWithEmail = (values: SignUpValues) => {
+    const signUpValues = {
+      name: values.name,
+      username: values.username,
+      email: values.email,
+      password: values.password,
+    }
+
+    return authClient.signUp.email(signUpValues)
+  }
+
   return {
     session,
     user,
     isLoading: sessionQuery.isPending,
     isAuthenticated: Boolean(user && session),
     signInWithEmail: (values: SignInValues) => authClient.signIn.email(values),
-    signUpWithEmail: ({ confirmPassword: _confirmPassword, ...values }: SignUpValues) =>
-      authClient.signUp.email(values),
+    signUpWithEmail,
     signInWithGoogle: () =>
       authClient.signIn.social({
         provider: "google",
+        callbackURL: "/dashboard",
+      }),
+    signInWithGitHub: () =>
+      authClient.signIn.social({
+        provider: "github",
         callbackURL: "/dashboard",
       }),
     sendEmailOtp: (email: string, type: "sign-in" | "email-verification" | "forget-password" = "sign-in") =>

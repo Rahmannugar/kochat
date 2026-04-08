@@ -12,13 +12,6 @@ type RequiredServerEnvKey =
   | "SMTP_PASS"
   | "SMTP_FROM";
 
-type OptionalServerEnvKey =
-  | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-  | "AI_PROVIDER"
-  | "AI_API_KEY"
-  | "AI_MODEL"
-  | "SMTP_SECURE"
-
 type ServerEnv = {
   DATABASE_URL: string
   BETTER_AUTH_SECRET: string
@@ -33,6 +26,8 @@ type ServerEnv = {
   SMTP_PASS: string
   SMTP_FROM: string
   SMTP_SECURE: boolean
+  GITHUB_CLIENT_ID?: string
+  GITHUB_CLIENT_SECRET?: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY?: string
   AI_PROVIDER?: string
   AI_API_KEY?: string
@@ -84,6 +79,8 @@ export const getServerEnv = () => {
     SMTP_PASS: process.env.SMTP_PASS as string,
     SMTP_FROM: process.env.SMTP_FROM as string,
     SMTP_SECURE: process.env.SMTP_SECURE === "true",
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     AI_PROVIDER: process.env.AI_PROVIDER,
     AI_API_KEY: process.env.AI_API_KEY,
     AI_MODEL: process.env.AI_MODEL,
