@@ -42,7 +42,7 @@ export const SignInForm = () => {
       return;
     }
 
-    router.replace("/");
+    router.replace("/dashboard");
   });
 
   const handleGoogleSignIn = () => {

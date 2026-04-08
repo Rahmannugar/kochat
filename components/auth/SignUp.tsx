@@ -18,8 +18,6 @@ import { GoogleIcon } from "@/components/shared/GoogleIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiClient } from "@/lib/utils/client";
-
 export const SignUpForm = () => {
   const router = useRouter();
   const { signUpWithEmail, signInWithGoogle } = useAuth();
@@ -52,22 +50,11 @@ export const SignUpForm = () => {
     }
 
     try {
-      await apiClient.post("/users/onboarding", {
-        name: values.name,
-        username: values.username,
-      });
-    } catch {}
-
-    try {
       await sendOtp({
         email: values.email,
         type: "email-verification",
       });
-    } catch {
-      setErrorMessage(
-        "Your account was created, but we couldn't send a verification code yet.",
-      );
-    }
+    } catch {}
 
     router.replace("/verify-email");
   });

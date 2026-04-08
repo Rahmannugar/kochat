@@ -19,7 +19,7 @@ export const AuthGuard = ({
 }: AuthGuardProps) => {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const effectiveUser = user ?? initialUser;
+  const effectiveUser = initialUser ?? user;
   const isReady = initialUser ? true : !isLoading;
 
   if (!isReady) {

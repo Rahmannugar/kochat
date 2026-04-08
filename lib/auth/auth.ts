@@ -6,7 +6,7 @@ import { emailOTP } from "better-auth/plugins"
 import { db } from "@/lib/db"
 import { getServerEnv } from "@/lib/env/server"
 import * as schema from "@/lib/db/schema"
-import { buildOtpEmail, buildWelcomeEmail } from "@/lib/auth/auth-email"
+import { buildOtpEmail, buildWelcomeEmail } from "@/lib/auth/auth-email-templates"
 import { mailService } from "@/lib/mail/mail.service"
 
 const env = getServerEnv()
@@ -18,6 +18,24 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  user: {
+    additionalFields: {
+      username: {
+        type: "string",
+        required: false,
+        returned: true,
+        transform: {
+          input: (value) =>
+            typeof value === "string" ? value.trim().toLowerCase() : value,
+        },
+      },
+      bio: {
+        type: "string",
+        required: false,
+        returned: true,
+      },
+    },
+  },
   account: {
     accountLinking: {
       enabled: true,
@@ -49,6 +67,10 @@ export const auth = betterAuth({
     emailOTP({
       expiresIn: 300,
       allowedAttempts: 3,
+      rateLimit: {
+        window: 60 * 60,
+        max: 3,
+      },
       storeOTP: {
         hash: async (otp) => {
           return createHash("sha256").update(otp).digest("hex")

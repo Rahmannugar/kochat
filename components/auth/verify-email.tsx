@@ -51,7 +51,7 @@ export const VerifyEmailForm = ({ email }: VerifyEmailFormProps) => {
       otp,
     });
 
-    router.replace("/");
+    router.replace("/dashboard")
   });
 
   const handleResend = async () => {
