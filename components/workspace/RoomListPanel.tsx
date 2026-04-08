@@ -88,7 +88,7 @@ export const RoomListPanel = ({
   };
 
   return (
-    <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
+    <Card className="min-w-0 rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
       <CardHeader className="gap-4 pb-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11 border border-border/60">
@@ -170,15 +170,15 @@ export const RoomListPanel = ({
 
       {hideRoomsList ? null : (
         <CardContent className="space-y-4 pt-0">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Your conversations</p>
-          <span className="text-xs text-muted-foreground">
-            {isLoading ? "Loading..." : `${memberships.length} shown`}
-          </span>
-        </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">Your conversations</p>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {isLoading ? "Loading..." : `${memberships.length} shown`}
+            </span>
+          </div>
 
-        <ScrollArea className="h-[520px] pr-3">
-          <div className="space-y-2">
+          <ScrollArea className="h-[520px] w-full pr-3">
+            <div className="space-y-2">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -196,7 +196,7 @@ export const RoomListPanel = ({
                     key={room.id}
                     href={`/rooms/${room.id}`}
                     className={cn(
-                      "block w-full rounded-[1.5rem] border px-4 py-3 text-left transition-colors",
+                      "block min-w-0 w-full rounded-[1.5rem] border px-4 py-3 text-left transition-colors",
                       isSelected
                         ? "border-primary/40 bg-primary/10"
                         : "border-border/60 bg-background hover:bg-muted/40",
@@ -255,8 +255,8 @@ export const RoomListPanel = ({
                 onNext={() => void handleNextPage()}
               />
             ) : null}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
         </CardContent>
       )}
     </Card>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import EmojiPicker, { Theme } from "emoji-picker-react"
 import {
   CameraIcon,
   SmileyIcon,
@@ -11,6 +12,7 @@ import {
   UploadSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react"
+import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -50,7 +52,6 @@ type PendingAudio = {
 
 const MAX_PENDING_IMAGES = 4
 const AI_INVOCATION_PATTERN = /(^|\s)@ai\b/i
-const EMOJIS = ["😀", "😂", "🙂", "😍", "🤔", "🔥", "👏", "🎉", "✅", "🙏", "👀", "💡"]
 
 const createPendingId = () => crypto.randomUUID()
 const normalizeMimeType = (mimeType: string) =>
@@ -71,6 +72,7 @@ const formatDuration = (valueMs: number) => {
 }
 
 export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
+  const { resolvedTheme } = useTheme()
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const audioInputRef = useRef<HTMLInputElement | null>(null)
@@ -637,19 +639,15 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
                 >
                   <SmileyIcon size={18} weight="bold" />
                 </PopoverTrigger>
-                <PopoverContent className="w-56 rounded-[1.25rem] p-3">
-                  <div className="grid grid-cols-6 gap-2">
-                    {EMOJIS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        className="inline-flex size-8 items-center justify-center rounded-full text-lg transition-colors hover:bg-muted"
-                        onClick={() => insertEmoji(emoji)}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
+                <PopoverContent className="w-auto rounded-[1.25rem] p-0">
+                  <EmojiPicker
+                    theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
+                    skinTonesDisabled
+                    searchDisabled
+                    previewConfig={{ showPreview: false }}
+                    lazyLoadEmojis
+                    onEmojiClick={(emojiData) => insertEmoji(emojiData.emoji)}
+                  />
                 </PopoverContent>
               </Popover>
               <Button

@@ -23,11 +23,11 @@ export const CursorPagination = ({
   onNext,
 }: CursorPaginationProps) => {
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <Button
         type="button"
         variant="outline"
-        className="rounded-full"
+        className="w-full rounded-full sm:w-auto"
         disabled={!canGoBack || isBusy}
         onClick={onBack}
       >
@@ -38,7 +38,7 @@ export const CursorPagination = ({
       <Button
         type="button"
         variant="outline"
-        className="rounded-full"
+        className="w-full rounded-full sm:w-auto"
         disabled={!canGoNext || isBusy}
         onClick={onNext}
       >

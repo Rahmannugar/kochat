@@ -59,7 +59,7 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
             <RoomListPanel user={user} selectedRoomId={room.id} />
           </div>
 
-          <section className="rounded-[1.75rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur md:p-6">
+          <section className="min-w-0 rounded-[1.75rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur md:p-6">
             <div className="hidden border-b border-border/60 pb-5 lg:block">
               <div className="mb-4">
                 <Link
@@ -93,7 +93,7 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
               </div>
             </div>
 
-            <div className="pt-0 lg:pt-6">
+            <div className="min-w-0 pt-0 lg:pt-6">
               <RoomPanel room={room} user={user} />
             </div>
           </section>

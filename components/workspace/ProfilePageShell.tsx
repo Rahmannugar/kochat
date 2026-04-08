@@ -49,7 +49,7 @@ export const ProfilePageShell = ({ user }: ProfilePageShellProps) => {
                 className={cn(
                   buttonVariants({
                     variant: "ghost",
-                    className: "mb-4 rounded-full px-0 text-muted-foreground",
+                    className: "mb-4 hidden rounded-full px-0 text-muted-foreground lg:inline-flex",
                   }),
                 )}
               >

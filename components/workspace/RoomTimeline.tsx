@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import {
   CircleNotchIcon,
+  RobotIcon,
   UsersThreeIcon,
   WifiHighIcon,
   WifiSlashIcon,
@@ -113,8 +114,8 @@ const MessageBubble = ({
         : `/users/${message.senderUser.id}`
       : null
   const aiMark = (
-    <span className="relative inline-flex size-7 items-center justify-center overflow-hidden rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.95),rgba(255,255,255,0.18)_22%,transparent_23%),linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] text-[10px] font-semibold tracking-[0.2em] text-white shadow-sm">
-      AI
+    <span className="relative inline-flex size-7 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] text-white shadow-sm">
+      <RobotIcon size={15} weight="fill" />
     </span>
   )
 
@@ -259,6 +260,8 @@ export const RoomTimeline = ({
   onOpenMembers,
 }: RoomTimelineProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const hasSnappedToLatestRef = useRef(false)
+  const previousLatestMessageIdRef = useRef<string | null>(null)
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   })
@@ -279,6 +282,30 @@ export const RoomTimeline = ({
   const totalActiveUsers = activeUsers.some((activeUser) => activeUser.userId === user.id)
     ? activeUsers.length
     : activeUsers.length + 1
+
+  useEffect(() => {
+    hasSnappedToLatestRef.current = false
+    previousLatestMessageIdRef.current = null
+  }, [room.id])
+
+  useEffect(() => {
+    if (hasSnappedToLatestRef.current || messages.length === 0) {
+      return
+    }
+
+    const viewport = containerRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    )
+
+    if (!viewport) {
+      return
+    }
+
+    requestAnimationFrame(() => {
+      viewport.scrollTop = viewport.scrollHeight
+      hasSnappedToLatestRef.current = true
+    })
+  }, [messages])
 
   useEffect(() => {
     if (!focusedMessageId) {
@@ -305,8 +332,46 @@ export const RoomTimeline = ({
     })
   }, [focusedMessageId, messages])
 
+  useEffect(() => {
+    const latestMessage = messages[messages.length - 1]
+
+    if (!latestMessage) {
+      return
+    }
+
+    const previousLatestMessageId = previousLatestMessageIdRef.current
+    previousLatestMessageIdRef.current = latestMessage.id
+
+    if (!previousLatestMessageId || previousLatestMessageId === latestMessage.id) {
+      return
+    }
+
+    const shouldSnapToLatest =
+      (latestMessage.sender === "human" && latestMessage.senderUserId === user.id) ||
+      latestMessage.sender === "ai"
+
+    if (!shouldSnapToLatest) {
+      return
+    }
+
+    const viewport = containerRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    )
+
+    if (!viewport) {
+      return
+    }
+
+    requestAnimationFrame(() => {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: "smooth",
+      })
+    })
+  }, [messages, user.id])
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge
           variant={connectionState === "open" ? "secondary" : "outline"}
@@ -318,7 +383,7 @@ export const RoomTimeline = ({
         <button
           type="button"
           onClick={onOpenMembers}
-          className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          className="inline-flex h-7 max-w-full items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
         >
           <UsersThreeIcon size={12} weight="bold" />
           {totalActiveUsers} active
@@ -333,7 +398,7 @@ export const RoomTimeline = ({
 
       <div
         ref={containerRef}
-        className="relative min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20"
+        className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20"
       >
         <ScrollArea className="h-[500px] px-4 py-4 md:px-6">
           <div className="space-y-4">

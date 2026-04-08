@@ -41,7 +41,7 @@ export const RoomPanel = ({ room, user }: RoomPanelProps) => {
   }
 
   return (
-    <div className="flex min-h-[580px] flex-col gap-4">
+    <div className="flex min-h-[580px] min-w-0 flex-col gap-4">
       {activeView === "messages" ? (
         <>
           <RoomSearchPanel roomId={room.id} onSelectMessage={handleSelectMessage} />

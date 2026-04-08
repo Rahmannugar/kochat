@@ -53,9 +53,9 @@ const buildEmailShell = ({
     <div style="margin:0; padding:32px 16px; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#0f172a;">
       <div style="display:none; max-height:0; overflow:hidden; opacity:0; visibility:hidden;">${preview}</div>
       <div style="max-width:560px; margin:0 auto; background:#ffffff; border:1px solid #dbe4f0; border-radius:24px; overflow:hidden; box-shadow:0 18px 50px rgba(15, 23, 42, 0.08);">
-        <div style="padding:28px 32px 18px; background:linear-gradient(160deg,#f8fbff 0%,#eef4ff 46%,#f7f1e8 100%); border-bottom:1px solid #e6edf5;">
-          <p style="margin:0 0 10px; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#64748b;">${appName} account</p>
-          <h1 style="margin:0; font-size:28px; line-height:1.15; color:#0f172a;">${heading}</h1>
+        <div style="padding:28px 32px 18px; background:linear-gradient(150deg,#0f172a 0%,#1e3a8a 55%,#0f766e 100%); border-bottom:1px solid #0f274f;">
+          <p style="margin:0 0 10px; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#bfdbfe;">${appName} account</p>
+          <h1 style="margin:0; font-size:28px; line-height:1.15; color:#f8fafc;">${heading}</h1>
         </div>
         <div style="padding:28px 32px 32px;">
           <p style="margin:0 0 14px; font-size:15px; line-height:1.7; color:#334155;">${intro}</p>
@@ -63,7 +63,7 @@ const buildEmailShell = ({
           <p style="margin:24px 0 0; font-size:13px; line-height:1.7; color:#64748b;">${footer}</p>
           ${
             appUrl
-              ? `<p style="margin:12px 0 0; font-size:13px; line-height:1.7; color:#94a3b8;">Access your account: <a href="${appUrl}" style="color:#2563eb; text-decoration:none;">${appUrl}</a></p>`
+              ? `<p style="margin:12px 0 0; font-size:13px; line-height:1.7; color:#64748b;">Access your account on <a href="${appUrl}" style="color:#2563eb; text-decoration:none; font-weight:600;">${appName}</a>.</p>`
               : ""
           }
         </div>
