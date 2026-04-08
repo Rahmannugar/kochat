@@ -10,7 +10,7 @@ export const SignOutButton = () => {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="destructive"
       className="rounded-full"
       onClick={() => void signOut()}
     >

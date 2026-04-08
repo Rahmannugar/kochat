@@ -14,7 +14,13 @@ export class ApiError extends Error {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false
+  }
+
+  const prototype = Object.getPrototypeOf(value)
+
+  return prototype === Object.prototype || prototype === null
 }
 
 async function parseResponse(response: Response) {

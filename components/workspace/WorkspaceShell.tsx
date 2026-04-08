@@ -1,21 +1,23 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import {
   ChatsCircleIcon,
+  GearSixIcon,
   HashIcon,
   LockSimpleIcon,
-  SparkleIcon,
   UserCirclePlusIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react"
+import { ProfilePanel } from "@/components/workspace/ProfilePanel"
 import { SignOutButton } from "@/components/shared/SignOutButton"
 import { ThemeToggler } from "@/components/shared/ThemeToggler"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { RoomTimeline } from "@/components/workspace/RoomTimeline"
 import { useRooms } from "@/lib/rooms/useRooms"
 import type { AuthUser } from "@/lib/auth/auth.types"
 import { cn } from "@/lib/utils"
@@ -35,19 +37,14 @@ const getRoomInitials = (name: string) =>
 
 export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
   const { data: memberships = [], isLoading } = useRooms()
+  const [currentUser, setCurrentUser] = useState(user)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (selectedRoomId || memberships.length === 0) {
-      return
-    }
-
-    setSelectedRoomId(memberships[0]?.room.id ?? null)
-  }, [memberships, selectedRoomId])
+  const [activeView, setActiveView] = useState<"rooms" | "profile">("rooms")
+  const activeRoomId = selectedRoomId ?? memberships[0]?.room.id ?? null
 
   const selectedMembership = useMemo(
-    () => memberships.find((membership) => membership.room.id === selectedRoomId) ?? null,
-    [memberships, selectedRoomId],
+    () => memberships.find((membership) => membership.room.id === activeRoomId) ?? null,
+    [activeRoomId, memberships],
   )
 
   const selectedRoom = selectedMembership?.room ?? null
@@ -63,7 +60,7 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                 alt="Kochat logo"
                 width={30}
                 height={30}
-                className="size-7 object-contain"
+                className="size-24 object-contain"
               />
             </div>
             <div>
@@ -85,13 +82,13 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
             <CardHeader className="gap-4">
               <div className="flex items-center gap-3">
                 <Avatar className="size-11 border border-border/60">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                  <AvatarFallback>{getRoomInitials(user.name)}</AvatarFallback>
+                  <AvatarImage src={currentUser.image ?? undefined} alt={currentUser.name} />
+                  <AvatarFallback>{getRoomInitials(currentUser.name)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <CardTitle className="truncate text-base">{user.name}</CardTitle>
+                  <CardTitle className="truncate text-base">{currentUser.name}</CardTitle>
                   <CardDescription className="truncate">
-                    {user.username ? `@${user.username}` : user.email}
+                    {currentUser.username ? `@${currentUser.username}` : currentUser.email}
                   </CardDescription>
                 </div>
               </div>
@@ -104,6 +101,15 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                 <Button className="justify-start rounded-full">
                   <UsersThreeIcon size={18} weight="bold" />
                   New group
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="col-span-2 justify-start rounded-full"
+                  onClick={() => setActiveView("profile")}
+                >
+                  <GearSixIcon size={18} weight="bold" />
+                  Profile
                 </Button>
               </div>
             </CardHeader>
@@ -128,13 +134,16 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                   ) : memberships.length > 0 ? (
                     memberships.map((membership) => {
                       const room = membership.room
-                      const isSelected = room.id === selectedRoomId
+                      const isSelected = activeView === "rooms" && room.id === activeRoomId
 
                       return (
                         <button
                           key={room.id}
                           type="button"
-                          onClick={() => setSelectedRoomId(room.id)}
+                          onClick={() => {
+                            setSelectedRoomId(room.id)
+                            setActiveView("rooms")
+                          }}
                           className={cn(
                             "w-full rounded-[1.5rem] border px-4 py-3 text-left transition-colors",
                             isSelected
@@ -186,7 +195,9 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
 
           <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
             <CardHeader className="gap-4 border-b border-border/60">
-              {selectedRoom ? (
+              {activeView === "profile" ? (
+                <CardTitle>Your profile</CardTitle>
+              ) : selectedRoom ? (
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -204,59 +215,17 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                     </CardDescription>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <SparkleIcon size={16} weight="fill" className="text-primary" />
-                    AI and live messages plug into this room next
-                  </div>
                 </div>
               ) : (
-                <>
-                  <CardTitle>Select a conversation</CardTitle>
-                  <CardDescription>
-                    Pick a room from the left to load its timeline and realtime activity.
-                  </CardDescription>
-                </>
+                <CardTitle>Select a conversation</CardTitle>
               )}
             </CardHeader>
 
             <CardContent className="flex min-h-[580px] flex-col justify-between gap-6 p-6">
-              {selectedRoom ? (
-                <>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-[1.5rem] border border-border/60 bg-muted/30 p-4">
-                      <p className="text-sm font-medium text-foreground">Room type</p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {selectedRoom.type === "group"
-                          ? "Group collaboration space"
-                          : "Secure one-to-one direct room"}
-                      </p>
-                    </div>
-                    <div className="rounded-[1.5rem] border border-border/60 bg-muted/30 p-4">
-                      <p className="text-sm font-medium text-foreground">Realtime status</p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Message SSE, typing, and presence are ready to plug into this shell.
-                      </p>
-                    </div>
-                    <div className="rounded-[1.5rem] border border-border/60 bg-muted/30 p-4">
-                      <p className="text-sm font-medium text-foreground">Media + AI</p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Images, voice messages, AI prompts, and audio playback already have backend
-                        support.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-1 items-center justify-center rounded-[1.75rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
-                    <div className="max-w-md space-y-3">
-                      <p className="text-lg font-semibold">Chat surface is the next UI slice</p>
-                      <p className="text-sm text-muted-foreground">
-                        This workspace shell is now wired to the real room list. Next we connect the
-                        message timeline, composer, typing indicators, and AI streaming UI into
-                        the selected room.
-                      </p>
-                    </div>
-                  </div>
-                </>
+              {activeView === "profile" ? (
+                <ProfilePanel user={currentUser} onUserChange={setCurrentUser} />
+              ) : selectedRoom ? (
+                <RoomTimeline room={selectedRoom} user={currentUser} />
               ) : (
                 <div className="flex flex-1 items-center justify-center rounded-[1.75rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
                   <div className="max-w-md space-y-3">
