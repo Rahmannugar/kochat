@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { SignInForm } from "@/components/auth/sign-in"
+import { SignInForm } from "@/components/auth/SignIn"
 import { getServerSession } from "@/lib/auth/auth"
 import { authService } from "@/lib/auth/auth.service"
 

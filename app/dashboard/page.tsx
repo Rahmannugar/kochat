@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "@/lib/auth/auth"
-import { AuthGuard } from "@/components/auth/auth-guard"
+import { AuthGuard } from "@/components/auth/AuthGuard"
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell"
 import { authService } from "@/lib/auth/auth.service"
 
