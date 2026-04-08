@@ -53,7 +53,7 @@ const buildEmailShell = ({
     <div style="margin:0; padding:32px 16px; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#0f172a;">
       <div style="display:none; max-height:0; overflow:hidden; opacity:0; visibility:hidden;">${preview}</div>
       <div style="max-width:560px; margin:0 auto; background:#ffffff; border:1px solid #dbe4f0; border-radius:24px; overflow:hidden; box-shadow:0 18px 50px rgba(15, 23, 42, 0.08);">
-        <div style="padding:28px 32px 18px; background:linear-gradient(150deg,#0f172a 0%,#1e3a8a 55%,#0f766e 100%); border-bottom:1px solid #0f274f;">
+        <div style="padding:28px 32px 18px; background:#0f172a; border-bottom:1px solid #1e293b;">
           <p style="margin:0 0 10px; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:#bfdbfe;">${appName} account</p>
           <h1 style="margin:0; font-size:28px; line-height:1.15; color:#f8fafc;">${heading}</h1>
         </div>

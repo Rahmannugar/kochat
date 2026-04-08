@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { authClient } from "@/lib/auth/auth-client"
+import { apiClient } from "@/lib/utils/client"
 
 type EmailOtpType = "sign-in" | "email-verification" | "forget-password"
 
@@ -151,11 +152,81 @@ export const useEmailOtp = () => {
     [],
   )
 
+  const requestPasswordReset = useCallback(
+    async (email: string) => {
+      setIsPending(true)
+      setError(null)
+
+      try {
+        const result = await apiClient.post<{ data: { success: boolean } }>(
+          "/auth/forgot-password/request",
+          { email },
+        )
+
+        return result.data
+      } catch (resetError) {
+        const message =
+          resetError instanceof Error ? resetError.message : "Failed to send reset code"
+        setError(message)
+        throw resetError
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
+
+  const resetPassword = useCallback(
+    async ({
+      email,
+      otp,
+      password,
+    }: {
+      email: string
+      otp: string
+      password: string
+    }) => {
+      setIsPending(true)
+      setError(null)
+
+      try {
+        const result = await authClient.emailOtp.resetPassword({
+          email,
+          otp,
+          password,
+        })
+
+        if (
+          result &&
+          typeof result === "object" &&
+          "error" in result &&
+          result.error
+        ) {
+          const message = getResultErrorMessage(result, "Failed to reset password")
+          setError(message)
+          throw new Error(message)
+        }
+
+        return result
+      } catch (resetError) {
+        const message =
+          resetError instanceof Error ? resetError.message : "Failed to reset password"
+        setError(message)
+        throw resetError
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
+
   return {
     isPending,
     error,
     sendOtp,
     signInWithOtp,
     verifyEmail,
+    requestPasswordReset,
+    resetPassword,
   }
 }

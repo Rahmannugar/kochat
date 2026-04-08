@@ -141,6 +141,14 @@ export const SignInForm = () => {
               {form.formState.errors.password.message}
             </p>
           ) : null}
+          <div className="pt-1 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         {errorMessage ? (

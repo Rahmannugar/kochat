@@ -36,6 +36,34 @@ export const verifyEmailSchema = z.object({
     .length(6, "Enter the 6-digit code"),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.email("Enter a valid email address"),
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Enter the 6-digit code"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password is too long"),
+  confirmPassword: z
+    .string()
+    .min(1, "Confirm your password")
+    .max(128, "Password is too long"),
+}).superRefine((values, context) => {
+  if (
+    values.confirmPassword.length > 0 &&
+    values.password !== values.confirmPassword
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    })
+  }
+})
+
 export type SignInValues = z.infer<typeof signInSchema>
 export type SignUpValues = z.infer<typeof signUpSchema>
 export type VerifyEmailValues = z.infer<typeof verifyEmailSchema>
+export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>
