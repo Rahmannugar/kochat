@@ -49,7 +49,14 @@ export const RoomListPanel = ({
   activeDashboardTab = "rooms",
   onDashboardTabChange,
 }: RoomListPanelProps) => {
-  const { data: memberships = [], isLoading } = useRooms();
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useRooms();
+  const memberships = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
     <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
@@ -207,6 +214,17 @@ export const RoomListPanel = ({
                 </p>
               </div>
             )}
+
+            {memberships.length > 0 && hasNextPage ? (
+              <button
+                type="button"
+                className="flex h-11 w-full items-center justify-center rounded-[1.25rem] border border-dashed border-border/70 bg-muted/15 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/30"
+                disabled={isFetchingNextPage}
+                onClick={() => void fetchNextPage()}
+              >
+                {isFetchingNextPage ? "Loading more..." : "Load more conversations"}
+              </button>
+            ) : null}
           </div>
         </ScrollArea>
         </CardContent>

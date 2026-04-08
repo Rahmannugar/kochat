@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull, lt, or } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { roomMembers, rooms } from "@/lib/db/schema"
 
@@ -80,13 +80,44 @@ export const roomRepository = {
     })
   },
 
-  listForUser: async (userId: string) => {
+  listForUser: async ({
+    userId,
+    limit = 10,
+    cursorId,
+  }: {
+    userId: string
+    limit?: number
+    cursorId?: string
+  }) => {
+    const cursorMembership = cursorId
+      ? await db.query.roomMembers.findFirst({
+          where: and(eq(roomMembers.id, cursorId), eq(roomMembers.userId, userId)),
+        })
+      : null
+
+    if (cursorId && !cursorMembership) {
+      throw new Error("Invalid room cursor")
+    }
+
     return db.query.roomMembers.findMany({
-      where: and(eq(roomMembers.userId, userId), isNull(roomMembers.archivedAt)),
+      where: cursorMembership
+        ? and(
+            eq(roomMembers.userId, userId),
+            isNull(roomMembers.archivedAt),
+            or(
+              lt(roomMembers.joinedAt, cursorMembership.joinedAt),
+              and(
+                eq(roomMembers.joinedAt, cursorMembership.joinedAt),
+                lt(roomMembers.id, cursorMembership.id),
+              ),
+            ),
+          )
+        : and(eq(roomMembers.userId, userId), isNull(roomMembers.archivedAt)),
       with: {
         room: true,
       },
-      orderBy: desc(roomMembers.joinedAt),
+      orderBy: [desc(roomMembers.joinedAt), desc(roomMembers.id)],
+      limit: limit + 1,
     })
   },
 

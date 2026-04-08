@@ -1,0 +1,1 @@
+CREATE INDEX "room_members_user_joined_id_idx" ON "room_members" USING btree ("user_id","joined_at","id");

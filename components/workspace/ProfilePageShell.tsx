@@ -44,6 +44,19 @@ export const ProfilePageShell = ({ user }: ProfilePageShellProps) => {
 
           <section className="rounded-[1.75rem] border border-border/70 bg-background/90 p-5 shadow-sm backdrop-blur md:p-6">
             <div className="mb-6">
+              <Link
+                href="/dashboard"
+                className={cn(
+                  buttonVariants({
+                    variant: "ghost",
+                    className: "mb-4 rounded-full px-0 text-muted-foreground",
+                  }),
+                )}
+              >
+                <ArrowLeftIcon size={18} weight="bold" />
+                Back to dashboard
+              </Link>
+
               <p className="text-xl font-semibold">Profile</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Keep your account details and photo up to date.

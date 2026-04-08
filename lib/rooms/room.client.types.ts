@@ -17,3 +17,11 @@ export type RoomListItem = {
     updatedAt: string | Date
   }
 }
+
+export type RoomListPage = {
+  items: RoomListItem[]
+  pageInfo: {
+    hasNextPage: boolean
+    nextCursor: string | null
+  }
+}

@@ -38,6 +38,7 @@ const sanitizeFileName = (fileName: string) => {
 }
 
 const REQUIRED_BUCKETS = [AVATAR_BUCKET, CHAT_IMAGE_BUCKET, CHAT_AUDIO_BUCKET] as const
+const normalizeMimeType = (mimeType: string) => mimeType.split(";")[0]?.trim().toLowerCase() || mimeType
 
 const validateFile = ({
   file,
@@ -52,7 +53,7 @@ const validateFile = ({
     throw new HttpError(400, `File exceeds the maximum size of ${Math.floor(maxSizeBytes / 1024 / 1024)}MB`)
   }
 
-  if (!allowedMimeTypes.includes(file.type)) {
+  if (!allowedMimeTypes.includes(normalizeMimeType(file.type))) {
     throw new HttpError(400, "File type is not supported")
   }
 }
@@ -89,7 +90,7 @@ const uploadAsset = async ({
     bucket,
     path,
     publicUrl: data.publicUrl,
-    mimeType: file.type,
+    mimeType: normalizeMimeType(file.type),
     size: file.size,
   }
 }
@@ -268,15 +269,17 @@ export const storageService = {
       throw new HttpError(400, `Audio exceeds the maximum size of ${Math.floor(CHAT_AUDIO_MAX_SIZE_BYTES / 1024 / 1024)}MB`)
     }
 
-    if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(mimeType)) {
+    const normalizedMimeType = normalizeMimeType(mimeType)
+
+    if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(normalizedMimeType)) {
       throw new HttpError(400, "Generated audio type is not supported")
     }
 
     return uploadBufferAsset({
       bucket: CHAT_AUDIO_BUCKET,
-      path: buildChatAudioPath(roomId, fileOwnerId, fileNameFromMimeType(mimeType)),
+      path: buildChatAudioPath(roomId, fileOwnerId, fileNameFromMimeType(normalizedMimeType)),
       buffer,
-      contentType: mimeType,
+      contentType: normalizedMimeType,
     })
   },
 

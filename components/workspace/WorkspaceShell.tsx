@@ -36,7 +36,8 @@ const getRoomInitials = (name: string) =>
     .join("")
 
 export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
-  const { data: memberships = [], isLoading } = useRooms()
+  const { data, isLoading } = useRooms()
+  const memberships = data?.pages.flatMap((page) => page.items) ?? []
   const [currentUser, setCurrentUser] = useState(user)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<"rooms" | "profile">("rooms")

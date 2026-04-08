@@ -29,6 +29,7 @@ export const roomMembers = pgTable(
     uniqueIndex("room_members_room_user_unique").on(table.roomId, table.userId),
     index("room_members_room_id_idx").on(table.roomId),
     index("room_members_user_id_idx").on(table.userId),
+    index("room_members_user_joined_id_idx").on(table.userId, table.joinedAt, table.id),
   ],
 );
 

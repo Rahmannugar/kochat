@@ -41,7 +41,39 @@ const ensureActiveMembership = async (
 
 export const roomService = {
   listRoomsForUser: async (userId: string) => {
-    return roomRepository.listForUser(userId);
+    const page = await roomRepository.listForUser({ userId, limit: 10 })
+
+    return {
+      items: page.slice(0, 10),
+      pageInfo: {
+        hasNextPage: page.length > 10,
+        nextCursor: page.length > 10 ? page[9]?.id ?? null : null,
+      },
+    }
+  },
+
+  listRoomsPageForUser: async ({
+    userId,
+    limit = 10,
+    cursor,
+  }: {
+    userId: string
+    limit?: number
+    cursor?: string
+  }) => {
+    const page = await roomRepository.listForUser({
+      userId,
+      limit,
+      cursorId: cursor,
+    })
+
+    return {
+      items: page.slice(0, limit),
+      pageInfo: {
+        hasNextPage: page.length > limit,
+        nextCursor: page.length > limit ? page[limit - 1]?.id ?? null : null,
+      },
+    }
   },
 
   getRoomForUser: async (roomId: string, userId: string) => {

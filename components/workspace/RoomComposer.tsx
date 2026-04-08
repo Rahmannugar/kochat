@@ -16,6 +16,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { useRoomTyping } from "@/lib/rooms/useRoomTyping"
 import { useRoomComposer } from "@/lib/rooms/useRoomComposer"
 import {
+  AI_USAGE_MAX_REQUESTS_PER_WINDOW,
+  AI_USAGE_WINDOW_MS,
+} from "@/lib/ai/ai.config"
+import {
   CHAT_AUDIO_ALLOWED_MIME_TYPES,
   CHAT_AUDIO_MAX_SIZE_BYTES,
   CHAT_IMAGE_ALLOWED_MIME_TYPES,
@@ -42,6 +46,8 @@ const MAX_PENDING_IMAGES = 4
 const AI_INVOCATION_PATTERN = /(^|\s)@ai\b/i
 
 const createPendingId = () => crypto.randomUUID()
+const normalizeMimeType = (mimeType: string) =>
+  mimeType.split(";")[0]?.trim().toLowerCase() || mimeType
 
 const formatBytes = (value: number) => {
   const mb = value / 1024 / 1024
@@ -49,18 +55,31 @@ const formatBytes = (value: number) => {
   return `${mb.toFixed(mb >= 10 ? 0 : 1)}MB`
 }
 
+const formatDuration = (valueMs: number) => {
+  const totalSeconds = Math.max(0, Math.floor(valueMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`
+}
+
 export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const audioInputRef = useRef<HTMLInputElement | null>(null)
+  const videoPreviewRef = useRef<HTMLVideoElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  const cameraStreamRef = useRef<MediaStream | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
 
   const [message, setMessage] = useState("")
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [pendingAudio, setPendingAudio] = useState<PendingAudio | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [recordingStartedAt, setRecordingStartedAt] = useState<number | null>(null)
+  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0)
 
   const {
     isSendingMessage,
@@ -88,8 +107,30 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
 
       mediaRecorderRef.current?.stop()
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+      cameraStreamRef.current?.getTracks().forEach((track) => track.stop())
     }
   }, [pendingImages])
+
+  useEffect(() => {
+    if (!isRecording || !recordingStartedAt) {
+      setRecordingElapsedMs(0)
+      return
+    }
+
+    const interval = window.setInterval(() => {
+      setRecordingElapsedMs(Date.now() - recordingStartedAt)
+    }, 250)
+
+    return () => window.clearInterval(interval)
+  }, [isRecording, recordingStartedAt])
+
+  useEffect(() => {
+    if (!isCameraOpen || !videoPreviewRef.current || !cameraStreamRef.current) {
+      return
+    }
+
+    videoPreviewRef.current.srcObject = cameraStreamRef.current
+  }, [isCameraOpen])
 
   const pendingMediaSummary = useMemo(() => {
     const parts: string[] = []
@@ -133,7 +174,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
     const nextImages: PendingImage[] = []
 
     for (const file of acceptedFiles) {
-      if (!CHAT_IMAGE_ALLOWED_MIME_TYPES.includes(file.type)) {
+      if (!CHAT_IMAGE_ALLOWED_MIME_TYPES.includes(normalizeMimeType(file.type))) {
         toast.error("Select JPG, PNG, WebP, or GIF images only.")
         continue
       }
@@ -173,7 +214,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
       return
     }
 
-    if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(file.type)) {
+    if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(normalizeMimeType(file.type))) {
       toast.error("Select MP3, WAV, WebM, OGG, MP4, or M4A audio.")
       event.target.value = ""
       return
@@ -190,6 +231,15 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
       label: file.name,
     })
     event.target.value = ""
+  }
+
+  const closeCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop())
+    cameraStreamRef.current = null
+    if (videoPreviewRef.current) {
+      videoPreviewRef.current.srcObject = null
+    }
+    setIsCameraOpen(false)
   }
 
   const handleRemoveImage = (imageId: string) => {
@@ -225,7 +275,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
       })
 
       recorder.addEventListener("stop", () => {
-        const mimeType = recorder.mimeType || "audio/webm"
+        const mimeType = normalizeMimeType(recorder.mimeType || "audio/webm")
         const blob = new Blob(recordedChunksRef.current, { type: mimeType })
 
         if (blob.size === 0) {
@@ -256,10 +306,13 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
         mediaStreamRef.current = null
         mediaRecorderRef.current = null
         recordedChunksRef.current = []
+        setRecordingStartedAt(null)
+        setRecordingElapsedMs(0)
       })
 
       recorder.start()
       setIsRecording(true)
+      setRecordingStartedAt(Date.now())
     } catch {
       toast.error("Microphone access is required to record audio.")
     }
@@ -272,6 +325,64 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
 
     mediaRecorderRef.current.stop()
     setIsRecording(false)
+  }
+
+  const openCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      cameraInputRef.current?.click()
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+        },
+      })
+
+      cameraStreamRef.current?.getTracks().forEach((track) => track.stop())
+      cameraStreamRef.current = stream
+      setIsCameraOpen(true)
+    } catch {
+      toast.error("Camera access was blocked, so we opened your photo picker instead.")
+      cameraInputRef.current?.click()
+    }
+  }
+
+  const captureCameraImage = async () => {
+    const video = videoPreviewRef.current
+
+    if (!video || !cameraStreamRef.current) {
+      return
+    }
+
+    const canvas = document.createElement("canvas")
+    canvas.width = video.videoWidth || 1280
+    canvas.height = video.videoHeight || 720
+    const context = canvas.getContext("2d")
+
+    if (!context) {
+      toast.error("Unable to capture a frame from the camera.")
+      return
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.92),
+    )
+
+    if (!blob) {
+      toast.error("Unable to capture a photo right now.")
+      return
+    }
+
+    addImageFiles([
+      new File([blob], `camera-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      }),
+    ])
+    closeCamera()
   }
 
   const handleSubmit = async () => {
@@ -397,6 +508,58 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
           </div>
         ) : null}
 
+        {isRecording ? (
+          <div className="flex items-center justify-between rounded-[1.25rem] border border-red-400/30 bg-red-500/5 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="inline-flex size-2.5 rounded-full bg-red-500" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Recording voice note</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(recordingElapsedMs)}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="rounded-full"
+              onClick={stopRecording}
+            >
+              <StopIcon size={16} weight="fill" />
+              Stop
+            </Button>
+          </div>
+        ) : null}
+
+        {isCameraOpen ? (
+          <div className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-muted/20">
+            <div className="aspect-[4/3] bg-black">
+              <video
+                ref={videoPreviewRef}
+                autoPlay
+                playsInline
+                muted
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+              <p className="text-xs text-muted-foreground">
+                Capture a photo and add it to this message before sending.
+              </p>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" className="rounded-full" onClick={closeCamera}>
+                  Cancel
+                </Button>
+                <Button type="button" className="rounded-full" onClick={() => void captureCameraImage()}>
+                  <CameraIcon size={16} weight="bold" />
+                  Use photo
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-[1.5rem] border border-border/70 bg-muted/20 p-2">
           <Textarea
             rows={3}
@@ -434,7 +597,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
                 size="icon"
                 className="rounded-full"
                 disabled={isBusy || isRecording || pendingImages.length >= MAX_PENDING_IMAGES}
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={() => void openCamera()}
                 aria-label="Open camera"
               >
                 <CameraIcon size={18} weight="bold" />
@@ -499,6 +662,10 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
         <p className="px-1 text-xs text-muted-foreground">
           Press <span className="font-medium text-foreground">Enter</span> to send and{" "}
           <span className="font-medium text-foreground">Shift + Enter</span> for a new line.
+        </p>
+        <p className="px-1 text-[11px] text-muted-foreground">
+          AI actions are limited to {AI_USAGE_MAX_REQUESTS_PER_WINDOW} requests every{" "}
+          {Math.round(AI_USAGE_WINDOW_MS / (60 * 60 * 1000))} hour.
         </p>
       </div>
     </div>

@@ -15,6 +15,9 @@ type ApiResponse<T> = {
   data: T
 }
 
+const normalizeMimeType = (mimeType: string) =>
+  mimeType.split(";")[0]?.trim().toLowerCase() || mimeType
+
 type CreateMessageResponse = {
   message: RoomEventMessage
   invokesAi: boolean
@@ -113,7 +116,7 @@ export const useRoomComposer = ({
         throw new Error("Room is required")
       }
 
-      if (!CHAT_IMAGE_ALLOWED_MIME_TYPES.includes(file.type)) {
+      if (!CHAT_IMAGE_ALLOWED_MIME_TYPES.includes(normalizeMimeType(file.type))) {
         const message = "Select a JPG, PNG, WebP, or GIF image."
         toast.error(message)
         throw new Error(message)
@@ -172,7 +175,7 @@ export const useRoomComposer = ({
         throw new Error("Room is required")
       }
 
-      if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(file.type)) {
+      if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(normalizeMimeType(file.type))) {
         const message = "Select an MP3, WAV, WebM, OGG, or M4A audio file."
         toast.error(message)
         throw new Error(message)
