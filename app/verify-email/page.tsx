@@ -17,7 +17,6 @@ const VerifyEmailPage = async () => {
   return (
     <VerifyEmailForm
       email={session.user.email}
-      initialName={session.user.name ?? ""}
     />
   )
 }

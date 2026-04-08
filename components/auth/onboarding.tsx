@@ -137,7 +137,7 @@ export const OnboardingForm = ({
               <p className="text-xl font-semibold">{siteConfig.name}</p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <CardTitle className="text-3xl tracking-[-0.03em]">Complete your profile</CardTitle>
               <CardDescription className="max-w-sm text-sm leading-6">
                 Choose how your account appears in Kochat before you enter the app.
@@ -146,7 +146,7 @@ export const OnboardingForm = ({
           </CardHeader>
           <CardContent className="space-y-5 px-7 pb-7">
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -156,7 +156,7 @@ export const OnboardingForm = ({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="name">Full name</Label>
                 <Input
                   id="name"
@@ -165,13 +165,13 @@ export const OnboardingForm = ({
                   {...form.register("name")}
                 />
                 {form.formState.errors.name ? (
-                  <p className="text-sm text-destructive">
+                  <p className="text-[13px] leading-4 text-destructive">
                     {form.formState.errors.name.message}
                   </p>
                 ) : null}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
@@ -180,7 +180,7 @@ export const OnboardingForm = ({
                   {...form.register("username")}
                 />
                 {form.formState.errors.username ? (
-                  <p className="text-sm text-destructive">
+                  <p className="text-[13px] leading-4 text-destructive">
                     {form.formState.errors.username.message}
                   </p>
                 ) : (
@@ -191,7 +191,7 @@ export const OnboardingForm = ({
               </div>
 
               {errorMessage ? (
-                <p className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <p className="text-xs leading-tight text-destructive">
                   {errorMessage}
                 </p>
               ) : null}

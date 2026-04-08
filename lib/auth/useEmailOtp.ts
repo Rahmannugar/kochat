@@ -5,6 +5,22 @@ import { authClient } from "@/lib/auth/auth-client"
 
 type EmailOtpType = "sign-in" | "email-verification" | "forget-password"
 
+const getResultErrorMessage = (result: unknown, fallbackMessage: string) => {
+  if (
+    result &&
+    typeof result === "object" &&
+    "error" in result &&
+    result.error &&
+    typeof result.error === "object" &&
+    "message" in result.error &&
+    typeof result.error.message === "string"
+  ) {
+    return result.error.message
+  }
+
+  return fallbackMessage
+}
+
 export const useEmailOtp = () => {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,10 +37,23 @@ export const useEmailOtp = () => {
       setError(null)
 
       try {
-        return await authClient.emailOtp.sendVerificationOtp({
+        const result = await authClient.emailOtp.sendVerificationOtp({
           email,
           type,
         })
+
+        if (
+          result &&
+          typeof result === "object" &&
+          "error" in result &&
+          result.error
+        ) {
+          const message = getResultErrorMessage(result, "Failed to send OTP")
+          setError(message)
+          throw new Error(message)
+        }
+
+        return result
       } catch (otpError) {
         const message =
           otpError instanceof Error ? otpError.message : "Failed to send OTP"
@@ -51,11 +80,24 @@ export const useEmailOtp = () => {
       setError(null)
 
       try {
-        return await authClient.signIn.emailOtp({
+        const result = await authClient.signIn.emailOtp({
           email,
           otp,
           name,
         })
+
+        if (
+          result &&
+          typeof result === "object" &&
+          "error" in result &&
+          result.error
+        ) {
+          const message = getResultErrorMessage(result, "Failed to verify OTP")
+          setError(message)
+          throw new Error(message)
+        }
+
+        return result
       } catch (otpError) {
         const message =
           otpError instanceof Error ? otpError.message : "Failed to verify OTP"
@@ -80,10 +122,23 @@ export const useEmailOtp = () => {
       setError(null)
 
       try {
-        return await authClient.emailOtp.verifyEmail({
+        const result = await authClient.emailOtp.verifyEmail({
           email,
           otp,
         })
+
+        if (
+          result &&
+          typeof result === "object" &&
+          "error" in result &&
+          result.error
+        ) {
+          const message = getResultErrorMessage(result, "Failed to verify email")
+          setError(message)
+          throw new Error(message)
+        }
+
+        return result
       } catch (otpError) {
         const message =
           otpError instanceof Error ? otpError.message : "Failed to verify email"
