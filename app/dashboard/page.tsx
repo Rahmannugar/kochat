@@ -1,52 +1,10 @@
-import { redirect } from "next/navigation"
-import { getServerSession } from "@/lib/auth/auth"
-import { AuthGuard } from "@/components/auth/AuthGuard"
-import { WorkspaceShell } from "@/components/workspace/WorkspaceShell"
-import { authService } from "@/lib/auth/auth.service"
+import { DashboardHub } from "@/components/workspace/DashboardHub"
+import { requireAuthUser } from "@/lib/auth/requireAuthUser"
 
 const DashboardPage = async () => {
-  const session = await getServerSession()
+  const user = await requireAuthUser()
 
-  if (!session) {
-    redirect("/sign-in")
-  }
-
-  const authRoute = await authService.getAuthRoute(session.user.id)
-
-  if (authRoute !== "/dashboard") {
-    redirect(authRoute)
-  }
-
-  const bootstrap = await authService.bootstrapUserAccount({
-    id: session.user.id,
-    name: session.user.name,
-    image: session.user.image,
-  })
-
-  return (
-    <AuthGuard
-      initialUser={{
-        id: bootstrap.user.id,
-        name: bootstrap.user.name,
-        email: bootstrap.user.email,
-        emailVerified: bootstrap.user.emailVerified,
-        username: bootstrap.user.username,
-        bio: bootstrap.user.bio,
-        image: bootstrap.user.image,
-      }}
-    >
-      <WorkspaceShell
-        user={{
-          id: bootstrap.user.id,
-          name: bootstrap.user.name,
-          email: bootstrap.user.email,
-          username: bootstrap.user.username,
-          bio: bootstrap.user.bio,
-          image: bootstrap.user.image,
-        }}
-      />
-    </AuthGuard>
-  )
+  return <DashboardHub user={user} />
 }
 
 export default DashboardPage
