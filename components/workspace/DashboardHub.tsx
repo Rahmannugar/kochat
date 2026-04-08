@@ -178,6 +178,7 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
               <RoomListPanel
                 user={user}
                 showQuickActions
+                hideRoomsList
                 activeDashboardTab={activeTab}
                 onDashboardTabChange={setActiveTab}
               />
@@ -351,8 +352,8 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
             ) : null}
 
             {activeTab === "rooms" ? (
-              <div className="rounded-[1.75rem] border border-border/70 bg-background/90 p-6 text-sm text-muted-foreground shadow-sm backdrop-blur lg:hidden">
-                Pick a room from the list above to continue.
+              <div className="lg:hidden">
+                <RoomListPanel user={user} />
               </div>
             ) : null}
           </div>

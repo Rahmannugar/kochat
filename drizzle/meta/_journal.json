@@ -15,6 +15,13 @@
       "when": 1775648099475,
       "tag": "0001_add-ai-usage-table",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775651736021,
+      "tag": "0002_enable-case-insensitive-usernames",
+      "breakpoints": true
     }
   ]
 }

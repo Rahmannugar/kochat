@@ -14,8 +14,8 @@ type CompleteOnboardingInput = {
   username: string;
 };
 
-const normalizeLookupValue = (value: string) => value.trim().toLowerCase();
-const normalizeUsername = (value: string) => value.trim().toLowerCase();
+const normalizeLookupValue = (value: string) => value.trim();
+const normalizeUsername = (value: string) => value.trim();
 
 export const userService = {
   getUserById: async (userId: string) => {

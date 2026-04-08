@@ -25,8 +25,7 @@ export const auth = betterAuth({
         required: false,
         returned: true,
         transform: {
-          input: (value) =>
-            typeof value === "string" ? value.trim().toLowerCase() : value,
+          input: (value) => (typeof value === "string" ? value.trim() : value),
         },
       },
       bio: {

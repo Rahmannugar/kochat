@@ -183,11 +183,7 @@ export const OnboardingForm = ({
                   <p className="text-[13px] leading-4 text-destructive">
                     {form.formState.errors.username.message}
                   </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Lowercase letters, numbers, and underscores only.
-                  </p>
-                )}
+                ) : null}
               </div>
 
               {errorMessage ? (

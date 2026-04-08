@@ -11,7 +11,6 @@ export const usernameSchema = z
   .trim()
   .min(3, "Username must be at least 3 characters")
   .max(30, "Username must be 30 characters or fewer")
-  .regex(/^[a-z0-9_]+$/, "Username can only contain lowercase letters, numbers, and underscores")
 
 export const userLookupSchema = z.object({
   query: z.string().trim().min(1, "Enter a username or email"),

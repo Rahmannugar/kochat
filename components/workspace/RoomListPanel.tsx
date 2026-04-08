@@ -26,6 +26,7 @@ type RoomListPanelProps = {
   user: AuthUser;
   selectedRoomId?: string | null;
   showQuickActions?: boolean;
+  hideRoomsList?: boolean;
   activeDashboardTab?: "rooms" | "start-chat" | "create-group" | "join-group";
   onDashboardTabChange?: (
     nextTab: "rooms" | "start-chat" | "create-group" | "join-group",
@@ -44,6 +45,7 @@ export const RoomListPanel = ({
   user,
   selectedRoomId = null,
   showQuickActions = false,
+  hideRoomsList = false,
   activeDashboardTab = "rooms",
   onDashboardTabChange,
 }: RoomListPanelProps) => {
@@ -67,6 +69,19 @@ export const RoomListPanel = ({
 
         {showQuickActions ? (
           <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onDashboardTabChange?.("rooms")}
+              className={cn(
+                "inline-flex h-11 items-center justify-start gap-2 rounded-2xl border px-4 text-sm font-medium transition-colors",
+                activeDashboardTab === "rooms"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-muted/40",
+              )}
+            >
+              <HashIcon size={18} weight="bold" />
+              <span>Conversations</span>
+            </button>
             <button
               type="button"
               onClick={() => onDashboardTabChange?.("start-chat")}
@@ -117,7 +132,8 @@ export const RoomListPanel = ({
         ) : null}
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-0">
+      {hideRoomsList ? null : (
+        <CardContent className="space-y-4 pt-0">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Your conversations</p>
           <span className="text-xs text-muted-foreground">
@@ -193,7 +209,8 @@ export const RoomListPanel = ({
             )}
           </div>
         </ScrollArea>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };

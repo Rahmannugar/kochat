@@ -1,4 +1,4 @@
-import { eq, or } from "drizzle-orm"
+import { eq, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema"
 
@@ -19,19 +19,22 @@ export const userRepository = {
 
   findByUsername: async (username: string) => {
     return db.query.user.findFirst({
-      where: eq(user.username, username),
+      where: sql`lower(${user.username}) = lower(${username})`,
     })
   },
 
   findByEmail: async (email: string) => {
     return db.query.user.findFirst({
-      where: eq(user.email, email),
+      where: sql`lower(${user.email}) = lower(${email})`,
     })
   },
 
   findByUsernameOrEmail: async (value: string) => {
     return db.query.user.findFirst({
-      where: or(eq(user.username, value), eq(user.email, value)),
+      where: or(
+        sql`lower(${user.username}) = lower(${value})`,
+        sql`lower(${user.email}) = lower(${value})`,
+      ),
     })
   },
 
