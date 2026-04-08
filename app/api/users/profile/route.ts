@@ -1,14 +1,14 @@
 import {
   handleRouteError,
   success,
-  requireSessionUser,
+  requireAppUser,
 } from "@/lib/utils/http";
 import { userService } from "@/lib/users/user.service";
 import { updateUserProfileSchema } from "@/lib/users/user.schema";
 
 export const PATCH = async (request: Request) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const payload = updateUserProfileSchema.parse(await request.json());
     const user = await userService.updateUserProfile({
       userId: sessionUser.id,

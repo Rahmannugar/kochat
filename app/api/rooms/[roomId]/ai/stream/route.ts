@@ -1,7 +1,7 @@
 import { aiService } from "@/lib/ai/ai.service";
 import { invokeAiSchema } from "@/lib/ai/ai.schema";
 import { roomIdParamsSchema } from "@/lib/rooms/room.schema";
-import { error, requireSessionUser } from "@/lib/utils/http";
+import { error, requireAppUser } from "@/lib/utils/http";
 
 type RouteContext = {
   params: Promise<{
@@ -11,7 +11,7 @@ type RouteContext = {
 
 export const POST = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const payload = invokeAiSchema.parse(await request.json());
     const { stream, persistedMessage } = await aiService.streamAssistantReply({

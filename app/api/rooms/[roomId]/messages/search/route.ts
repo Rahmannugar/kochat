@@ -1,7 +1,7 @@
 import {
   handleRouteError,
   success,
-  requireSessionUser,
+  requireAppUser,
 } from "@/lib/utils/http";
 import { searchRoomMessagesQuerySchema } from "@/lib/messages/message.schema";
 import { roomIdParamsSchema } from "@/lib/rooms/room.schema";
@@ -15,7 +15,7 @@ type RouteContext = {
 
 export const GET = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const { searchParams } = new URL(request.url);
     const { query, limit } = searchRoomMessagesQuerySchema.parse({

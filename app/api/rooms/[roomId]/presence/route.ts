@@ -2,7 +2,7 @@ import { roomIdParamsSchema } from "@/lib/rooms/room.schema"
 import { roomService } from "@/lib/rooms/room.service"
 import { updatePresenceSchema } from "@/lib/realtime/realtime.schema"
 import { realtimeState } from "@/lib/realtime/realtime-state"
-import { handleRouteError, requireSessionUser, success } from "@/lib/utils/http"
+import { handleRouteError, requireAppUser, success } from "@/lib/utils/http"
 
 type RouteContext = {
   params: Promise<{
@@ -14,7 +14,7 @@ export const runtime = "nodejs"
 
 export const POST = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser()
+    const sessionUser = await requireAppUser()
     const { roomId } = roomIdParamsSchema.parse(await context.params)
     const payload = updatePresenceSchema.parse(await request.json())
 

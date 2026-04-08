@@ -3,7 +3,7 @@ import { aiService } from "@/lib/ai/ai.service";
 import { roomIdParamsSchema } from "@/lib/rooms/room.schema";
 import {
   handleRouteError,
-  requireSessionUser,
+  requireAppUser,
   success,
 } from "@/lib/utils/http";
 
@@ -15,7 +15,7 @@ type RouteContext = {
 
 export const POST = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const payload = transcribeAudioSchema.parse(await request.json());
     const transcript = await aiService.transcribeAudio({

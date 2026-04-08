@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiClient } from "@/lib/utils/client";
 import { ThemeToggler } from "@/components/shared/ThemeToggler";
 
 export const SignUpForm = () => {
@@ -54,6 +55,16 @@ export const SignUpForm = () => {
       setErrorMessage(
         result.error.message ?? "Unable to create your account right now",
       );
+      return;
+    }
+
+    try {
+      await apiClient.post("/users/onboarding", {
+        name: values.name,
+        username: values.username,
+      });
+    } catch {
+      router.replace("/onboarding");
       return;
     }
 

@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation"
 import { SignUpForm } from "@/components/auth/sign-up"
 import { getServerSession } from "@/lib/auth/auth"
+import { authService } from "@/lib/auth/auth.service"
 
 const SignUpPage = async () => {
   const session = await getServerSession()
 
   if (session) {
-    redirect("/dashboard")
+    redirect(await authService.getAuthRoute(session.user.id))
   }
 
   return <SignUpForm />

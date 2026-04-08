@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { getServerSession } from "@/lib/auth/auth"
+import { userRepository } from "@/lib/users/user.repository"
 
 export class HttpError extends Error {
   status: number
@@ -51,4 +52,23 @@ export const requireSessionUser = async () => {
   }
 
   return session.user
+}
+
+export const requireAppUser = async () => {
+  const sessionUser = await requireSessionUser()
+  const currentUser = await userRepository.findById(sessionUser.id)
+
+  if (!currentUser) {
+    throw new HttpError(404, "Authenticated user record was not found")
+  }
+
+  if (!currentUser.emailVerified) {
+    throw new HttpError(403, "Email verification required")
+  }
+
+  if (!currentUser.username) {
+    throw new HttpError(403, "Profile completion required")
+  }
+
+  return currentUser
 }

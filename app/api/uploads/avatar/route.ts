@@ -1,5 +1,5 @@
 import {
-  requireSessionUser,
+  requireAppUser,
   handleRouteError,
   success,
   HttpError,
@@ -9,7 +9,7 @@ import { userService } from "@/lib/users/user.service";
 
 export const POST = async (request: Request) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const formData = await request.formData();
     const file = formData.get("file");
 

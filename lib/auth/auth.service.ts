@@ -6,6 +6,8 @@ type BootstrapUserInput = {
   image?: string | null;
 };
 
+type AuthFlowDestination = "/sign-in" | "/onboarding" | "/dashboard"
+
 export const authService = {
   bootstrapUserAccount: async ({ id, name, image }: BootstrapUserInput) => {
     const currentUser = await userRepository.findById(id);
@@ -34,5 +36,11 @@ export const authService = {
     }
 
     return !currentUser.username;
+  },
+
+  getAuthRoute: async (userId: string): Promise<AuthFlowDestination> => {
+    const needsOnboarding = await authService.requiresProfileCompletion(userId)
+
+    return needsOnboarding ? "/onboarding" : "/dashboard"
   },
 };

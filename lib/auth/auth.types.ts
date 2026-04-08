@@ -25,4 +25,5 @@ export type AuthStoreState = {
 
 export type AuthRailContext = {
   user: AuthUser | null
+  isOnboarded: boolean
 }

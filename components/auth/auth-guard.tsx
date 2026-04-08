@@ -29,7 +29,10 @@ export const AuthGuard = ({
   return (
     <RailBoundary
       rail={authenticatedRail}
-      context={{ user: effectiveUser }}
+      context={{
+        user: effectiveUser,
+        isOnboarded: Boolean(effectiveUser?.username),
+      }}
       onRedirect={(to) => router.replace(to)}
       fallback={fallback}
       denied={fallback}

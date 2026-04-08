@@ -2,7 +2,7 @@ import { aiService } from "@/lib/ai/ai.service";
 import {
   handleRouteError,
   success,
-  requireSessionUser,
+  requireAppUser,
 } from "@/lib/utils/http";
 import {
   createMessageSchema,
@@ -19,7 +19,7 @@ type RouteContext = {
 
 export const GET = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const { searchParams } = new URL(request.url);
     const { limit, cursor } = roomMessagesQuerySchema.parse({
@@ -41,7 +41,7 @@ export const GET = async (request: Request, context: RouteContext) => {
 
 export const POST = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser();
+    const sessionUser = await requireAppUser();
     const { roomId } = roomIdParamsSchema.parse(await context.params);
     const payload = createMessageSchema.parse(await request.json());
     const message = await messageService.createHumanMessage({

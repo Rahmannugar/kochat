@@ -13,7 +13,34 @@ if (!supabaseUrl || !serviceRoleKey) {
   );
 }
 
-const REQUIRED_BUCKETS = ["avatars", "chat-images", "chat-audio"];
+const REQUIRED_BUCKETS = [
+  {
+    name: "avatars",
+    public: true,
+    fileSizeLimit: 10 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  {
+    name: "chat-images",
+    public: true,
+    fileSizeLimit: 10 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+  },
+  {
+    name: "chat-audio",
+    public: true,
+    fileSizeLimit: 5 * 1024 * 1024,
+    allowedMimeTypes: [
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/mp4",
+      "audio/wav",
+      "audio/webm",
+      "audio/ogg",
+      "audio/x-m4a",
+    ],
+  },
+];
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
@@ -32,23 +59,43 @@ if (listError) {
 const existingBucketNames = new Set(buckets.map((bucket) => bucket.name));
 
 for (const bucket of REQUIRED_BUCKETS) {
-  if (existingBucketNames.has(bucket)) {
-    console.log(`Bucket already exists: ${bucket}`);
+  if (existingBucketNames.has(bucket.name)) {
+    const { error: updateError } = await supabase.storage.updateBucket(
+      bucket.name,
+      {
+        public: bucket.public,
+        fileSizeLimit: bucket.fileSizeLimit,
+        allowedMimeTypes: bucket.allowedMimeTypes,
+      },
+    );
+
+    if (updateError) {
+      throw new Error(
+        `Failed to update bucket "${bucket.name}": ${updateError.message}`,
+      );
+    }
+
+    console.log(`Updated bucket: ${bucket.name}`);
     continue;
   }
 
-  const { error: createError } = await supabase.storage.createBucket(bucket, {
-    public: true,
-  });
+  const { error: createError } = await supabase.storage.createBucket(
+    bucket.name,
+    {
+      public: bucket.public,
+      fileSizeLimit: bucket.fileSizeLimit,
+      allowedMimeTypes: bucket.allowedMimeTypes,
+    },
+  );
 
   if (
     createError &&
     !createError.message.toLowerCase().includes("already exists")
   ) {
     throw new Error(
-      `Failed to create bucket "${bucket}": ${createError.message}`,
+      `Failed to create bucket "${bucket.name}": ${createError.message}`,
     );
   }
 
-  console.log(`Created bucket: ${bucket}`);
+  console.log(`Created bucket: ${bucket.name}`);
 }

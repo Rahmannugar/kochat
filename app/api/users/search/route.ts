@@ -1,14 +1,14 @@
 import {
   handleRouteError,
   success,
-  requireSessionUser,
+  requireAppUser,
 } from "@/lib/utils/http";
 import { userService } from "@/lib/users/user.service";
 import { userLookupSchema } from "@/lib/users/user.schema";
 
 export const GET = async (request: Request) => {
   try {
-    await requireSessionUser();
+    await requireAppUser();
 
     const { searchParams } = new URL(request.url);
     const { query } = userLookupSchema.parse({

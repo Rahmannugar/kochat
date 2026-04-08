@@ -2,7 +2,7 @@ import { roomIdParamsSchema } from "@/lib/rooms/room.schema"
 import { realtimeState } from "@/lib/realtime/realtime-state"
 import { roomService } from "@/lib/rooms/room.service"
 import { roomEvents } from "@/lib/realtime/room-events"
-import { error, requireSessionUser } from "@/lib/utils/http"
+import { error, requireAppUser } from "@/lib/utils/http"
 
 type RouteContext = {
   params: Promise<{
@@ -15,7 +15,7 @@ export const runtime = "nodejs"
 
 export const GET = async (request: Request, context: RouteContext) => {
   try {
-    const sessionUser = await requireSessionUser()
+    const sessionUser = await requireAppUser()
     const { roomId } = roomIdParamsSchema.parse(await context.params)
     await roomService.getRoomForUser(roomId, sessionUser.id)
 

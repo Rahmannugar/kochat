@@ -11,6 +11,10 @@ const DashboardPage = async () => {
     redirect("/sign-in")
   }
 
+  if ((await authService.getAuthRoute(session.user.id)) !== "/dashboard") {
+    redirect("/onboarding")
+  }
+
   const bootstrap = await authService.bootstrapUserAccount({
     id: session.user.id,
     name: session.user.name,
