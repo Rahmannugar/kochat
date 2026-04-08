@@ -1,6 +1,7 @@
 import { messageRepository } from "@/lib/messages/message.repository";
 import { roomRepository } from "@/lib/rooms/room.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
+import type { SearchMessageResult } from "@/lib/messages/message.client.types";
 
 type CreateHumanMessageInput = {
   roomId: string;
@@ -33,6 +34,43 @@ const assertActiveRoomMembership = async (roomId: string, userId: string) => {
 
   return membership;
 };
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+const buildMatchPreview = (
+  field: "content" | "audioTranscript",
+  text: string | null,
+  query: string,
+) => {
+  if (!text) {
+    return null
+  }
+
+  const normalizedText = text.trim()
+
+  if (!normalizedText) {
+    return null
+  }
+
+  const matcher = new RegExp(escapeRegExp(query), "i")
+  const match = matcher.exec(normalizedText)
+
+  if (!match || match.index === undefined) {
+    return null
+  }
+
+  const contextRadius = 48
+  const start = Math.max(0, match.index - contextRadius)
+  const end = Math.min(normalizedText.length, match.index + match[0].length + contextRadius)
+
+  return {
+    field,
+    text: normalizedText,
+    before: normalizedText.slice(start, match.index),
+    match: match[0],
+    after: normalizedText.slice(match.index + match[0].length, end),
+  }
+}
 
 export const messageService = {
   listRoomMessages: async ({
@@ -72,10 +110,29 @@ export const messageService = {
     userId: string,
     query: string,
     limit = 20,
-  ) => {
+  ): Promise<SearchMessageResult[]> => {
     await assertActiveRoomMembership(roomId, userId);
 
-    return messageRepository.searchByRoomId(roomId, query.trim(), limit);
+    const normalizedQuery = query.trim()
+    const messages = await messageRepository.searchByRoomId(roomId, normalizedQuery, limit)
+
+    return messages
+      .map<SearchMessageResult | null>((message) => {
+        const matches = [
+          buildMatchPreview("content", message.content, normalizedQuery),
+          buildMatchPreview("audioTranscript", message.audioTranscript, normalizedQuery),
+        ].filter((value): value is NonNullable<typeof value> => Boolean(value))
+
+        if (matches.length === 0) {
+          return null
+        }
+
+        return {
+          message,
+          matches,
+        }
+      })
+      .filter((value): value is SearchMessageResult => Boolean(value))
   },
 
   createHumanMessage: async ({

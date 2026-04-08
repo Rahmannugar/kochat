@@ -26,3 +26,16 @@ export type PaginatedMessages = {
     nextCursor: string | null
   }
 }
+
+export type SearchMessageMatch = {
+  field: "content" | "audioTranscript"
+  text: string
+  before: string
+  match: string
+  after: string
+}
+
+export type SearchMessageResult = {
+  message: RoomEventMessage
+  matches: SearchMessageMatch[]
+}

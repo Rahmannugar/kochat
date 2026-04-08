@@ -2,6 +2,7 @@
 
 import { useAiStream } from "@/lib/ai/useAiStream"
 import { RoomComposer } from "@/components/workspace/RoomComposer"
+import { RoomSearchPanel } from "@/components/workspace/RoomSearchPanel"
 import { RoomTimeline } from "@/components/workspace/RoomTimeline"
 import type { RoomListItem } from "@/lib/rooms/room.client.types"
 import type { AuthUser } from "@/lib/auth/auth.types"
@@ -16,6 +17,7 @@ export const RoomPanel = ({ room, user }: RoomPanelProps) => {
 
   return (
     <div className="flex min-h-[580px] flex-col gap-4">
+      <RoomSearchPanel roomId={room.id} />
       <RoomTimeline
         room={room}
         user={user}
