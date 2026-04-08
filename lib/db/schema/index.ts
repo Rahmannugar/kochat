@@ -3,6 +3,7 @@ export * from "./user";
 export * from "./session";
 export * from "./account";
 export * from "./verification";
+export * from "./ai-usage";
 export * from "./room";
 export * from "./room-member";
 export * from "./message";

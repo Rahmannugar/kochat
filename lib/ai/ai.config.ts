@@ -3,3 +3,6 @@ export const AI_SYSTEM_PROMPT =
 
 export const AI_TRANSCRIPTION_PROMPT =
   "Transcribe this audio accurately. Return only the transcript text."
+
+export const AI_USAGE_WINDOW_MS = 60 * 60 * 1000
+export const AI_USAGE_MAX_REQUESTS_PER_WINDOW = 20

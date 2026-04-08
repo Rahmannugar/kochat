@@ -8,6 +8,13 @@
       "when": 1775607957715,
       "tag": "0000_init_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775648099475,
+      "tag": "0001_add-ai-usage-table",
+      "breakpoints": true
     }
   ]
 }

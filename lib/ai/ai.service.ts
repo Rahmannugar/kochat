@@ -1,4 +1,5 @@
 import { AI_SYSTEM_PROMPT } from "@/lib/ai/ai.config";
+import { consumeAiUsage } from "@/lib/ai/ai-usage.utils";
 import { getAiClient } from "@/lib/ai/ai-client";
 import type { AiImageInput, AiPromptMessage } from "@/lib/ai/ai.types";
 import { messageRepository } from "@/lib/messages/message.repository";
@@ -147,6 +148,7 @@ export const aiService = {
     triggerMessageId,
   }: StreamAssistantReplyInput) => {
     await assertActiveRoomMembership(roomId, actorUserId);
+    await consumeAiUsage(actorUserId)
 
     const promptPayload = await buildPromptPayload(roomId, triggerMessageId);
     const aiClient = getAiClient();
@@ -234,6 +236,7 @@ export const aiService = {
     prompt?: string;
   }) => {
     await assertActiveRoomMembership(roomId, actorUserId);
+    await consumeAiUsage(actorUserId)
 
     return getAiClient().transcribeAudio({
       audioBase64,
@@ -254,6 +257,7 @@ export const aiService = {
     voiceName?: string;
   }) => {
     await assertActiveRoomMembership(roomId, actorUserId);
+    await consumeAiUsage(actorUserId)
 
     return getAiClient().synthesizeSpeech({
       text: text.trim(),
@@ -273,6 +277,7 @@ export const aiService = {
     voiceName?: string;
   }) => {
     await assertActiveRoomMembership(roomId, actorUserId);
+    await consumeAiUsage(actorUserId)
 
     const audio = await getAiClient().synthesizeSpeech({
       text: text.trim(),
