@@ -9,6 +9,103 @@ const createGroupCode = () => `${GROUP_ROOM_CODE_PREFIX}-${createSecureCode()}`;
 const createDirectMessageKey = (firstUserId: string, secondUserId: string) =>
   [firstUserId, secondUserId].sort().join(":");
 
+const getMemberLabel = ({
+  name,
+  username,
+  email,
+}: {
+  name: string | null
+  username: string | null
+  email: string
+}) => {
+  if (username) {
+    return username
+  }
+
+  return name?.trim() || email
+}
+
+const getConversationPartnerLabel = ({
+  name,
+  username,
+  email,
+}: {
+  name: string | null
+  username: string | null
+  email: string
+}) => {
+  return username || name?.trim() || email
+}
+
+const joinMemberLabels = (labels: string[]) => {
+  if (labels.length <= 1) {
+    return labels[0] ?? "Direct conversation"
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`
+  }
+
+  return `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`
+}
+
+const withRoomDisplayName = async <
+  TRoom extends {
+    id: string
+    name: string
+    type: "dm" | "group"
+  },
+>(
+  room: TRoom,
+  currentUserId: string,
+) => {
+  const memberships =
+    room.type === "dm"
+      ? await roomRepository.listActiveMembershipsByRoomId(room.id)
+      : null
+  const currentMember =
+    memberships?.find((membership) => membership.userId === currentUserId) ?? null
+  const otherMembers =
+    memberships?.filter((membership) => membership.userId !== currentUserId) ?? []
+  const displayName = room.type === "group"
+    ? room.name
+    : joinMemberLabels([
+        ...(currentMember ? [getMemberLabel(currentMember.user)] : []),
+        ...otherMembers.map((membership) => getMemberLabel(membership.user)),
+      ])
+  const subtitle =
+    room.type === "group"
+      ? null
+      : `Private conversation between ${joinMemberLabels([
+          ...(currentMember ? [getConversationPartnerLabel(currentMember.user)] : []),
+          ...otherMembers.map((membership) =>
+            getConversationPartnerLabel(membership.user),
+          ),
+        ])}.`
+
+  return {
+    ...room,
+    displayName,
+    subtitle,
+  }
+}
+
+const withMembershipRoomDisplayName = async <
+  TMembership extends {
+    room: {
+      id: string
+      name: string
+      type: "dm" | "group"
+    }
+  },
+>(
+  membership: TMembership,
+  currentUserId: string,
+) => ({
+  ...membership,
+  room: await withRoomDisplayName(membership.room, currentUserId),
+})
+
 const ensureActiveMembership = async (
   roomId: string,
   userId: string,
@@ -42,9 +139,14 @@ const ensureActiveMembership = async (
 export const roomService = {
   listRoomsForUser: async (userId: string) => {
     const page = await roomRepository.listForUser({ userId, limit: 10 })
+    const items = await Promise.all(
+      page.slice(0, 10).map((membership) =>
+        withMembershipRoomDisplayName(membership, userId),
+      ),
+    )
 
     return {
-      items: page.slice(0, 10),
+      items,
       pageInfo: {
         hasNextPage: page.length > 10,
         nextCursor: page.length > 10 ? page[9]?.id ?? null : null,
@@ -67,8 +169,14 @@ export const roomService = {
       cursorId: cursor,
     })
 
+    const items = await Promise.all(
+      page.slice(0, limit).map((membership) =>
+        withMembershipRoomDisplayName(membership, userId),
+      ),
+    )
+
     return {
-      items: page.slice(0, limit),
+      items,
       pageInfo: {
         hasNextPage: page.length > limit,
         nextCursor: page.length > limit ? page[limit - 1]?.id ?? null : null,
@@ -89,7 +197,7 @@ export const roomService = {
       throw new Error("Room not found");
     }
 
-    return room;
+    return withRoomDisplayName(room, userId);
   },
 
   listMembersPageForUser: async ({

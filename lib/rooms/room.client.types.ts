@@ -8,6 +8,8 @@ export type RoomListItem = {
   room: {
     id: string
     name: string
+    displayName: string
+    subtitle: string | null
     description: string | null
     type: "dm" | "group"
     code: string | null

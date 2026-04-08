@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lt, or } from "drizzle-orm"
+import { and, asc, desc, eq, isNull, lt, or } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { roomMembers, rooms } from "@/lib/db/schema"
 
@@ -181,6 +181,7 @@ export const roomRepository = {
       with: {
         user: true,
       },
+      orderBy: [asc(roomMembers.joinedAt), asc(roomMembers.id)],
     })
   },
 

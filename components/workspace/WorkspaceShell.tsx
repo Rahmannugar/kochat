@@ -164,14 +164,14 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                                     className="text-primary"
                                   />
                                 )}
-                                <p className="truncate font-medium">{room.name}</p>
+                                <p className="truncate font-medium">{room.displayName}</p>
                               </div>
-                              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                                {room.description ||
-                                  (room.type === "group"
-                                    ? "Private group room joined by secure code."
-                                    : "Direct conversation between two members.")}
-                              </p>
+                                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                                  {room.description ||
+                                    (room.type === "group"
+                                      ? "Private group room joined by secure code."
+                                      : room.subtitle ?? "Private direct conversation.")}
+                                </p>
                             </div>
                             <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                               {room.type}
@@ -207,12 +207,12 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
                       ) : (
                         <ChatsCircleIcon size={22} weight="bold" className="text-primary" />
                       )}
-                      {selectedRoom.name}
+                      {selectedRoom.displayName}
                     </CardTitle>
                     <CardDescription className="mt-1">
                       {selectedRoom.type === "group"
                         ? `Join code: ${selectedRoom.code}`
-                        : "Private direct conversation room"}
+                        : selectedRoom.subtitle ?? "Private direct conversation"}
                     </CardDescription>
                   </div>
 

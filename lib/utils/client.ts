@@ -35,16 +35,58 @@ async function parseResponse(response: Response) {
   return response.text();
 }
 
+let pendingUnauthorizedCheck: Promise<void> | null = null
+
 const handleUnauthorizedResponse = () => {
   if (typeof window === "undefined") {
-    return
+    return Promise.resolve()
   }
 
-  useAuthStore.getState().clearSession()
-
-  if (!window.location.pathname.startsWith("/sign-in")) {
-    window.location.assign("/sign-in")
+  if (pendingUnauthorizedCheck) {
+    return pendingUnauthorizedCheck
   }
+
+  pendingUnauthorizedCheck = fetch("/api/auth/get-session", {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error("Unable to verify the current session")
+      }
+
+      const session = await parseResponse(response)
+      const hasActiveSession =
+        session &&
+        typeof session === "object" &&
+        "session" in session &&
+        "user" in session &&
+        (session as { session: unknown; user: unknown }).session &&
+        (session as { session: unknown; user: unknown }).user
+
+      if (hasActiveSession) {
+        return
+      }
+
+      useAuthStore.getState().clearSession()
+
+      if (!window.location.pathname.startsWith("/sign-in")) {
+        window.location.assign("/sign-in")
+      }
+    })
+    .catch(() => {
+      useAuthStore.getState().clearSession()
+
+      if (!window.location.pathname.startsWith("/sign-in")) {
+        window.location.assign("/sign-in")
+      }
+    })
+    .finally(() => {
+      pendingUnauthorizedCheck = null
+    })
+
+  return pendingUnauthorizedCheck
 }
 
 export class ApiClient {

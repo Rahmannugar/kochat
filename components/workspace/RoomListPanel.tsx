@@ -43,14 +43,6 @@ const getInitials = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
-const getRoomDisplayName = (roomName: string, roomType: "dm" | "group") => {
-  if (roomType === "dm" && roomName.includes(":")) {
-    return "Direct conversation"
-  }
-
-  return roomName
-}
-
 export const RoomListPanel = ({
   user,
   selectedRoomId = null,
@@ -198,7 +190,6 @@ export const RoomListPanel = ({
               memberships.map((membership) => {
                 const room = membership.room;
                 const isSelected = room.id === selectedRoomId;
-                const roomDisplayName = getRoomDisplayName(room.name, room.type)
 
                 return (
                   <Link
@@ -227,13 +218,13 @@ export const RoomListPanel = ({
                               className="text-primary"
                             />
                           )}
-                          <p className="truncate font-medium">{roomDisplayName}</p>
+                          <p className="truncate font-medium">{room.displayName}</p>
                         </div>
                         <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
                           {room.description ||
                             (room.type === "group"
                               ? "Private group room joined by secure code."
-                              : "Direct conversation between two members.")}
+                              : room.subtitle ?? "Private direct conversation.")}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">

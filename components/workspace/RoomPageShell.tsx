@@ -43,11 +43,11 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
                 <ChatsCircleIcon size={20} weight="bold" className="text-primary" />
               )}
               <div className="min-w-0">
-                <p className="truncate font-semibold">{room.name}</p>
+                <p className="truncate font-semibold">{room.displayName}</p>
                 <p className="truncate text-sm text-muted-foreground">
                   {room.type === "group"
                     ? `Join code: ${room.code}`
-                    : "Private direct conversation"}
+                    : room.subtitle ?? "Private direct conversation"}
                 </p>
               </div>
             </div>
@@ -83,11 +83,11 @@ export const RoomPageShell = ({ user, room }: RoomPageShellProps) => {
                   <ChatsCircleIcon size={22} weight="bold" className="text-primary" />
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-xl font-semibold">{room.name}</p>
+                  <p className="truncate text-xl font-semibold">{room.displayName}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {room.type === "group"
                       ? `Join code: ${room.code}`
-                      : "Private direct conversation"}
+                      : room.subtitle ?? "Private direct conversation"}
                   </p>
                 </div>
               </div>
