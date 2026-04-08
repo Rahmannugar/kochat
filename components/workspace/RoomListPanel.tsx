@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   GearSixIcon,
   HashIcon,
@@ -9,6 +10,7 @@ import {
   UserCirclePlusIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
+import { CursorPagination } from "@/components/shared/CursorPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
@@ -56,7 +58,34 @@ export const RoomListPanel = ({
     hasNextPage,
     fetchNextPage,
   } = useRooms();
-  const memberships = data?.pages.flatMap((page) => page.items) ?? [];
+  const pages = data?.pages ?? [];
+  const [pageIndex, setPageIndex] = useState(0);
+  const memberships = pages[pageIndex]?.items ?? [];
+  const canGoBack = pageIndex > 0;
+  const canGoNext = pageIndex < pages.length - 1 || Boolean(hasNextPage);
+
+  useEffect(() => {
+    if (pageIndex > 0 && pageIndex >= pages.length) {
+      setPageIndex(Math.max(0, pages.length - 1));
+    }
+  }, [pageIndex, pages.length]);
+
+  const handleNextPage = async () => {
+    if (pageIndex < pages.length - 1) {
+      setPageIndex((current) => current + 1);
+      return;
+    }
+
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const result = await fetchNextPage();
+
+    if (result.data?.pages.length && pageIndex < result.data.pages.length - 1) {
+      setPageIndex((current) => current + 1);
+    }
+  };
 
   return (
     <Card className="rounded-[1.75rem] border-border/70 bg-background/90 backdrop-blur">
@@ -144,7 +173,7 @@ export const RoomListPanel = ({
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Your conversations</p>
           <span className="text-xs text-muted-foreground">
-            {isLoading ? "Loading..." : `${memberships.length} total`}
+            {isLoading ? "Loading..." : `${memberships.length} shown`}
           </span>
         </div>
 
@@ -215,15 +244,16 @@ export const RoomListPanel = ({
               </div>
             )}
 
-            {memberships.length > 0 && hasNextPage ? (
-              <button
-                type="button"
-                className="flex h-11 w-full items-center justify-center rounded-[1.25rem] border border-dashed border-border/70 bg-muted/15 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/30"
-                disabled={isFetchingNextPage}
-                onClick={() => void fetchNextPage()}
-              >
-                {isFetchingNextPage ? "Loading more..." : "Load more conversations"}
-              </button>
+            {pages.length > 0 ? (
+              <CursorPagination
+                canGoBack={canGoBack}
+                canGoNext={canGoNext}
+                isBusy={isFetchingNextPage}
+                backLabel="Previous"
+                nextLabel="Next"
+                onBack={() => setPageIndex((current) => Math.max(0, current - 1))}
+                onNext={() => void handleNextPage()}
+              />
             ) : null}
           </div>
         </ScrollArea>

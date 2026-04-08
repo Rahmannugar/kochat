@@ -13,12 +13,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRoomMessages } from "@/lib/rooms/useRoomMessages"
-import { useRoomEvents } from "@/lib/rooms/useRoomEvents"
 import { useRoomPresence } from "@/lib/rooms/useRoomPresence"
 import type { RoomEventMessage } from "@/lib/messages/message.client.types"
 import type { RoomListItem } from "@/lib/rooms/room.client.types"
 import type { AuthUser } from "@/lib/auth/auth.types"
+import type { ActiveUser, TypingUser } from "@/lib/realtime/realtime-event.types"
 import { cn } from "@/lib/utils"
+
+const AI_MENTION_PATTERN = /@ai\b/gi
 
 type RoomTimelineProps = {
   room: RoomListItem["room"]
@@ -26,6 +28,10 @@ type RoomTimelineProps = {
   streamedAiText?: string
   isAiStreaming?: boolean
   focusedMessageId?: string | null
+  connectionState: "idle" | "connecting" | "open" | "closed" | "error"
+  typingUsers: TypingUser[]
+  activeUsers: ActiveUser[]
+  onOpenMembers?: () => void
 }
 
 const formatTime = (value: string | Date) => {
@@ -60,6 +66,31 @@ const getConnectionLabel = (
     default:
       return "Idle"
   }
+}
+
+const renderMessageContent = (content: string, isOwnMessage: boolean) => {
+  const parts = content.split(AI_MENTION_PATTERN)
+  const mentions = content.match(AI_MENTION_PATTERN) ?? []
+
+  return (
+    <p className="whitespace-pre-wrap break-words text-sm leading-6">
+      {parts.map((part, index) => (
+        <span key={`${part}-${index}`}>
+          {part}
+          {mentions[index] ? (
+            <span
+              className={cn(
+                "font-semibold",
+                isOwnMessage ? "text-primary-foreground/90" : "text-sky-700 dark:text-sky-300",
+              )}
+            >
+              {mentions[index]}
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </p>
+  )
 }
 
 const MessageBubble = ({
@@ -162,9 +193,7 @@ const MessageBubble = ({
           ) : null}
 
           {message.content ? (
-            <p className="whitespace-pre-wrap break-words text-sm leading-6">
-              {message.content}
-            </p>
+            renderMessageContent(message.content, isOwnMessage)
           ) : null}
 
           {message.imageUrl ? (
@@ -224,12 +253,15 @@ export const RoomTimeline = ({
   streamedAiText = "",
   isAiStreaming = false,
   focusedMessageId = null,
+  connectionState,
+  typingUsers,
+  activeUsers,
+  onOpenMembers,
 }: RoomTimelineProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   })
-  const { connectionState, typingUsers, activeUsers } = useRoomEvents(room.id)
 
   useRoomPresence(room.id)
 
@@ -283,10 +315,14 @@ export const RoomTimeline = ({
           {connectionState === "open" ? <WifiHighIcon size={12} weight="bold" /> : <WifiSlashIcon size={12} weight="bold" />}
           {getConnectionLabel(connectionState)}
         </Badge>
-        <Badge variant="outline" className="h-7 rounded-full px-3">
+        <button
+          type="button"
+          onClick={onOpenMembers}
+          className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        >
           <UsersThreeIcon size={12} weight="bold" />
           {totalActiveUsers} active
-        </Badge>
+        </button>
         {otherTypingUsers.length > 0 ? (
           <Badge variant="outline" className="h-7 rounded-full px-3">
             <CircleNotchIcon size={12} className="animate-spin" />

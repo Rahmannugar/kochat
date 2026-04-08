@@ -164,12 +164,44 @@ export const roomRepository = {
     return membership
   },
 
-  listMembersByRoomId: async (roomId: string) => {
+  listMembersByRoomId: async ({
+    roomId,
+    limit = 10,
+    cursorId,
+  }: {
+    roomId: string
+    limit?: number
+    cursorId?: string
+  }) => {
+    const cursorMembership = cursorId
+      ? await db.query.roomMembers.findFirst({
+          where: and(eq(roomMembers.id, cursorId), eq(roomMembers.roomId, roomId)),
+        })
+      : null
+
+    if (cursorId && !cursorMembership) {
+      throw new Error("Invalid member cursor")
+    }
+
     return db.query.roomMembers.findMany({
-      where: eq(roomMembers.roomId, roomId),
+      where: cursorMembership
+        ? and(
+            eq(roomMembers.roomId, roomId),
+            isNull(roomMembers.archivedAt),
+            or(
+              lt(roomMembers.joinedAt, cursorMembership.joinedAt),
+              and(
+                eq(roomMembers.joinedAt, cursorMembership.joinedAt),
+                lt(roomMembers.id, cursorMembership.id),
+              ),
+            ),
+          )
+        : and(eq(roomMembers.roomId, roomId), isNull(roomMembers.archivedAt)),
       with: {
         user: true,
       },
+      orderBy: [desc(roomMembers.joinedAt), desc(roomMembers.id)],
+      limit: limit + 1,
     })
   },
 }

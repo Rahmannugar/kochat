@@ -25,3 +25,27 @@ export type RoomListPage = {
     nextCursor: string | null
   }
 }
+
+export type RoomMemberListItem = {
+  id: string
+  roomId: string
+  userId: string
+  role: "owner" | "member"
+  archivedAt: string | Date | null
+  joinedAt: string | Date
+  user: {
+    id: string
+    name: string
+    email: string
+    username: string | null
+    image: string | null
+  }
+}
+
+export type RoomMemberPage = {
+  items: RoomMemberListItem[]
+  pageInfo: {
+    hasNextPage: boolean
+    nextCursor: string | null
+  }
+}

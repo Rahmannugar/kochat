@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   CameraIcon,
+  SmileyIcon,
   ImageIcon,
   MicrophoneIcon,
   PaperPlaneTiltIcon,
@@ -12,6 +13,11 @@ import {
 } from "@phosphor-icons/react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { useRoomTyping } from "@/lib/rooms/useRoomTyping"
 import { useRoomComposer } from "@/lib/rooms/useRoomComposer"
@@ -44,6 +50,7 @@ type PendingAudio = {
 
 const MAX_PENDING_IMAGES = 4
 const AI_INVOCATION_PATTERN = /(^|\s)@ai\b/i
+const EMOJIS = ["😀", "😂", "🙂", "😍", "🤔", "🔥", "👏", "🎉", "✅", "🙏", "👀", "💡"]
 
 const createPendingId = () => crypto.randomUUID()
 const normalizeMimeType = (mimeType: string) =>
@@ -67,6 +74,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const audioInputRef = useRef<HTMLInputElement | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
@@ -205,6 +213,28 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
 
     addImageFiles(files)
     event.target.value = ""
+  }
+
+  const insertEmoji = (emoji: string) => {
+    const textarea = textareaRef.current
+
+    if (!textarea) {
+      setMessage((current) => `${current}${emoji}`)
+      return
+    }
+
+    const selectionStart = textarea.selectionStart ?? message.length
+    const selectionEnd = textarea.selectionEnd ?? message.length
+    const nextValue =
+      message.slice(0, selectionStart) + emoji + message.slice(selectionEnd)
+
+    setMessage(nextValue)
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const nextCursor = selectionStart + emoji.length
+      textarea.setSelectionRange(nextCursor, nextCursor)
+    })
   }
 
   const handleAudioFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -562,6 +592,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
 
         <div className="rounded-[1.5rem] border border-border/70 bg-muted/20 p-2">
           <Textarea
+            ref={textareaRef}
             rows={3}
             value={message}
             placeholder="Write a message. Use @ai when you want help in-thread."
@@ -591,6 +622,36 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
               >
                 <ImageIcon size={18} weight="bold" />
               </Button>
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      disabled={isBusy || isRecording}
+                      aria-label="Insert emoji"
+                    />
+                  }
+                >
+                  <SmileyIcon size={18} weight="bold" />
+                </PopoverTrigger>
+                <PopoverContent className="w-56 rounded-[1.25rem] p-3">
+                  <div className="grid grid-cols-6 gap-2">
+                    {EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className="inline-flex size-8 items-center justify-center rounded-full text-lg transition-colors hover:bg-muted"
+                        onClick={() => insertEmoji(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button
                 type="button"
                 variant="ghost"

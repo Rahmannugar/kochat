@@ -92,6 +92,34 @@ export const roomService = {
     return room;
   },
 
+  listMembersPageForUser: async ({
+    roomId,
+    userId,
+    limit = 10,
+    cursor,
+  }: {
+    roomId: string
+    userId: string
+    limit?: number
+    cursor?: string
+  }) => {
+    await roomService.getRoomForUser(roomId, userId)
+
+    const page = await roomRepository.listMembersByRoomId({
+      roomId,
+      limit,
+      cursorId: cursor,
+    })
+
+    return {
+      items: page.slice(0, limit),
+      pageInfo: {
+        hasNextPage: page.length > limit,
+        nextCursor: page.length > limit ? page[limit - 1]?.id ?? null : null,
+      },
+    }
+  },
+
   createGroupRoom: async ({
     name,
     description,
