@@ -33,9 +33,13 @@ const HighlightedSnippet = ({
 
 type RoomSearchPanelProps = {
   roomId: string
+  onSelectMessage?: (messageId: string) => void
 }
 
-export const RoomSearchPanel = ({ roomId }: RoomSearchPanelProps) => {
+export const RoomSearchPanel = ({
+  roomId,
+  onSelectMessage,
+}: RoomSearchPanelProps) => {
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const searchQuery = useRoomMessageSearch({
@@ -95,9 +99,13 @@ export const RoomSearchPanel = ({ roomId }: RoomSearchPanelProps) => {
                 ))
               ) : searchQuery.data && searchQuery.data.length > 0 ? (
                 searchQuery.data.map((result) => (
-                  <div
+                  <button
+                    type="button"
                     key={result.message.id}
-                    className="rounded-[1rem] border border-border/60 bg-background px-4 py-3"
+                    className="block w-full rounded-[1rem] border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                    onClick={() => {
+                      onSelectMessage?.(result.message.id)
+                    }}
                   >
                     <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                       {result.matches[0]?.field === "audioTranscript" ? (
@@ -112,7 +120,7 @@ export const RoomSearchPanel = ({ roomId }: RoomSearchPanelProps) => {
                       </span>
                     </div>
                     <HighlightedSnippet result={result} />
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="rounded-[1rem] border border-dashed border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import {
   CircleNotchIcon,
@@ -25,6 +25,7 @@ type RoomTimelineProps = {
   user: AuthUser
   streamedAiText?: string
   isAiStreaming?: boolean
+  focusedMessageId?: string | null
 }
 
 const formatTime = (value: string | Date) => {
@@ -222,7 +223,9 @@ export const RoomTimeline = ({
   user,
   streamedAiText = "",
   isAiStreaming = false,
+  focusedMessageId = null,
 }: RoomTimelineProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   })
@@ -244,6 +247,31 @@ export const RoomTimeline = ({
   const totalActiveUsers = activeUsers.some((activeUser) => activeUser.userId === user.id)
     ? activeUsers.length
     : activeUsers.length + 1
+
+  useEffect(() => {
+    if (!focusedMessageId) {
+      return
+    }
+
+    const container = containerRef.current
+
+    if (!container) {
+      return
+    }
+
+    const messageElement = container.querySelector<HTMLElement>(
+      `[data-message-id="${focusedMessageId}"]`,
+    )
+
+    if (!messageElement) {
+      return
+    }
+
+    messageElement.scrollIntoView({
+      block: "center",
+      behavior: "smooth",
+    })
+  }, [focusedMessageId, messages])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -267,7 +295,10 @@ export const RoomTimeline = ({
         ) : null}
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20">
+      <div
+        ref={containerRef}
+        className="relative min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20"
+      >
         <ScrollArea className="h-[500px] px-4 py-4 md:px-6">
           <div className="space-y-4">
             {messagesQuery.hasNextPage ? (
@@ -296,12 +327,21 @@ export const RoomTimeline = ({
               ))
             ) : messages.length > 0 ? (
               messages.map((message) => (
-                <MessageBubble
+                <div
                   key={message.id}
-                  message={message}
-                  isOwnMessage={message.sender === "human" && message.senderUserId === user.id}
-                  currentUserId={user.id}
-                />
+                  data-message-id={message.id}
+                  className={cn(
+                    "rounded-[1.75rem] transition-[background-color,box-shadow] duration-300",
+                    focusedMessageId === message.id &&
+                      "bg-amber-300/15 shadow-[0_0_0_1px_rgba(245,158,11,0.28)] dark:bg-amber-400/10",
+                  )}
+                >
+                  <MessageBubble
+                    message={message}
+                    isOwnMessage={message.sender === "human" && message.senderUserId === user.id}
+                    currentUserId={user.id}
+                  />
+                </div>
               ))
             ) : (
               <div className="flex min-h-[340px] items-center justify-center">
