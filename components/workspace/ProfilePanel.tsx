@@ -49,10 +49,12 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const {
+    hasHydrated: hasPushHydrated,
     isSupported: isPushSupported,
     isConfigured: isPushConfigured,
     permission: pushPermission,
     isSubscribed: isPushSubscribed,
+    isInitializing: isPushInitializing,
     isPending: isPushPending,
     error: pushError,
     enableNotifications,
@@ -122,6 +124,27 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
       setIsSaving(false)
     }
   }
+
+  const handleNotificationToggle = async () => {
+    if (isPushSubscribed) {
+      await disableNotifications()
+      return
+    }
+
+    await enableNotifications()
+  }
+
+  const pushStatusMessage = !hasPushHydrated || isPushInitializing
+    ? "Checking browser notification support..."
+    : !isPushSupported
+      ? "This browser does not support web push notifications."
+      : !isPushConfigured
+        ? "Push notifications are not configured yet."
+        : isPushSubscribed
+          ? "Notifications are currently enabled on this device."
+          : pushPermission === "denied"
+            ? "Notification permission is blocked in this browser."
+            : "Notifications are currently off on this device."
 
   const handleAvatarSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -320,15 +343,7 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
               Get notified about new messages when you are away from the room.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              {!isPushSupported
-                ? "This browser does not support web push notifications."
-                : !isPushConfigured
-                  ? "Push notifications are not configured yet."
-                  : isPushSubscribed
-                    ? "Notifications are currently enabled on this device."
-                    : pushPermission === "denied"
-                      ? "Notification permission is blocked in this browser."
-                      : "Notifications are currently off on this device."}
+              {pushStatusMessage}
             </p>
 
             {pushError ? (
@@ -340,15 +355,21 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
                 type="button"
                 variant={isPushSubscribed ? "outline" : "default"}
                 className="rounded-full"
-                disabled={!isPushSupported || !isPushConfigured || isPushPending || pushPermission === "denied"}
-                onClick={() =>
-                  void (isPushSubscribed ? disableNotifications() : enableNotifications())
+                disabled={
+                  isPushInitializing ||
+                  !hasPushHydrated ||
+                  !isPushSupported ||
+                  !isPushConfigured ||
+                  isPushPending
                 }
+                onClick={() => void handleNotificationToggle()}
               >
                 {isPushPending
                   ? "Saving..."
                   : isPushSubscribed
                     ? "Disable notifications"
+                    : pushPermission === "denied"
+                      ? "Notifications blocked"
                     : "Enable notifications"}
               </Button>
             </div>

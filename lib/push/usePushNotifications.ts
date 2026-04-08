@@ -36,10 +36,12 @@ const toSubscriptionPayload = (subscription: PushSubscription) => {
 }
 
 export const usePushNotifications = () => {
+  const [hasHydrated, setHasHydrated] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [isConfigured, setIsConfigured] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>("default")
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,11 +50,13 @@ export const usePushNotifications = () => {
       return
     }
 
+    setHasHydrated(true)
     setPermission(Notification.permission)
 
     const bootstrap = async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         setIsSupported(false)
+        setIsInitializing(false)
         return
       }
 
@@ -64,14 +68,20 @@ export const usePushNotifications = () => {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
       setIsSubscribed(Boolean(subscription))
+      setIsInitializing(false)
     }
 
     void bootstrap().catch(() => {
       setError("Unable to initialize push notifications")
+      setIsInitializing(false)
     })
   }, [])
 
   const enableNotifications = async () => {
+    if (isPending) {
+      return false
+    }
+
     setIsPending(true)
     setError(null)
 
@@ -79,14 +89,25 @@ export const usePushNotifications = () => {
       const config = await apiClient.get<PushConfigResponse>("/push/subscription")
 
       if (!config.data.supported || !config.data.publicKey) {
-        throw new Error("Push notifications are not configured on this app")
+        setError("Push notifications are not configured on this app")
+        return false
       }
 
-      const nextPermission = await Notification.requestPermission()
+      if (Notification.permission === "denied") {
+        setPermission("denied")
+        setError("Notification permission is blocked in this browser. Update your site settings to enable it.")
+        return false
+      }
+
+      const nextPermission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission()
       setPermission(nextPermission)
 
       if (nextPermission !== "granted") {
-        throw new Error("Notification permission was not granted")
+        setError("Notification permission is required before notifications can be enabled.")
+        return false
       }
 
       const registration = await navigator.serviceWorker.ready
@@ -101,15 +122,20 @@ export const usePushNotifications = () => {
 
       await apiClient.post("/push/subscription", toSubscriptionPayload(subscription))
       setIsSubscribed(true)
+      return true
     } catch (pushError) {
       setError(pushError instanceof Error ? pushError.message : "Unable to enable notifications")
-      throw pushError
+      return false
     } finally {
       setIsPending(false)
     }
   }
 
   const disableNotifications = async () => {
+    if (isPending) {
+      return false
+    }
+
     setIsPending(true)
     setError(null)
 
@@ -125,19 +151,22 @@ export const usePushNotifications = () => {
       }
 
       setIsSubscribed(false)
+      return true
     } catch (pushError) {
       setError(pushError instanceof Error ? pushError.message : "Unable to disable notifications")
-      throw pushError
+      return false
     } finally {
       setIsPending(false)
     }
   }
 
   return {
+    hasHydrated,
     isSupported,
     isConfigured,
     permission,
     isSubscribed,
+    isInitializing,
     isPending,
     error,
     enableNotifications,
