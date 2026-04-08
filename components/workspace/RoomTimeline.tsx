@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils"
 type RoomTimelineProps = {
   room: RoomListItem["room"]
   user: AuthUser
+  streamedAiText?: string
+  isAiStreaming?: boolean
 }
 
 const formatTime = (value: string | Date) => {
@@ -120,6 +122,25 @@ const MessageBubble = ({
             </p>
           ) : null}
 
+          {message.imageUrl ? (
+            <div className="mt-3 overflow-hidden rounded-[1rem] border border-black/5 bg-black/5 dark:border-white/10 dark:bg-white/5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={message.imageUrl}
+                alt={message.content || "Shared image"}
+                className="max-h-80 w-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          {message.audioUrl ? (
+            <div className="mt-3 rounded-[1rem] border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
+              <audio controls className="w-full" src={message.audioUrl}>
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+          ) : null}
+
           {message.messageType !== "text" ? (
             <div className="mt-3">
               <Badge
@@ -150,7 +171,12 @@ const MessageBubble = ({
   )
 }
 
-export const RoomTimeline = ({ room, user }: RoomTimelineProps) => {
+export const RoomTimeline = ({
+  room,
+  user,
+  streamedAiText = "",
+  isAiStreaming = false,
+}: RoomTimelineProps) => {
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   })
@@ -172,7 +198,7 @@ export const RoomTimeline = ({ room, user }: RoomTimelineProps) => {
   const activeOtherUsers = activeUsers.filter((activeUser) => activeUser.userId !== user.id)
 
   return (
-    <div className="flex min-h-[580px] flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge
           variant={connectionState === "open" ? "secondary" : "outline"}
@@ -193,7 +219,7 @@ export const RoomTimeline = ({ room, user }: RoomTimelineProps) => {
         ) : null}
       </div>
 
-      <div className="relative flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-border/60 bg-muted/20">
         <ScrollArea className="h-[500px] px-4 py-4 md:px-6">
           <div className="space-y-4">
             {messagesQuery.hasNextPage ? (
@@ -239,6 +265,27 @@ export const RoomTimeline = ({ room, user }: RoomTimelineProps) => {
                 </div>
               </div>
             )}
+
+            {isAiStreaming || streamedAiText ? (
+              <MessageBubble
+                message={{
+                  id: "streaming-ai-message",
+                  roomId: room.id,
+                  sender: "ai",
+                  senderUserId: null,
+                  content: streamedAiText,
+                  messageType: "text",
+                  imageUrl: null,
+                  audioUrl: null,
+                  audioTranscript: null,
+                  metadata: null,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  senderUser: null,
+                }}
+                isOwnMessage={false}
+              />
+            ) : null}
           </div>
         </ScrollArea>
       </div>

@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { RoomTimeline } from "@/components/workspace/RoomTimeline"
+import { RoomPanel } from "@/components/workspace/RoomPanel"
 import { useRooms } from "@/lib/rooms/useRooms"
 import type { AuthUser } from "@/lib/auth/auth.types"
 import { cn } from "@/lib/utils"
@@ -225,7 +225,7 @@ export const WorkspaceShell = ({ user }: WorkspaceShellProps) => {
               {activeView === "profile" ? (
                 <ProfilePanel user={currentUser} onUserChange={setCurrentUser} />
               ) : selectedRoom ? (
-                <RoomTimeline room={selectedRoom} user={currentUser} />
+                <RoomPanel room={selectedRoom} user={currentUser} />
               ) : (
                 <div className="flex flex-1 items-center justify-center rounded-[1.75rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
                   <div className="max-w-md space-y-3">
