@@ -43,6 +43,13 @@
       "when": 1775682449450,
       "tag": "0005_add-push-subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775701072145,
+      "tag": "0006_add-message-attachments",
+      "breakpoints": true
     }
   ]
 }

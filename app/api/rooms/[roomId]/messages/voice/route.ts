@@ -16,6 +16,8 @@ type RouteContext = {
   }>;
 };
 
+export const runtime = "nodejs"
+
 export const POST = async (request: Request, context: RouteContext) => {
   try {
     const sessionUser = await requireAppUser();
@@ -56,6 +58,16 @@ export const POST = async (request: Request, context: RouteContext) => {
       messageType: "voice",
       audioUrl: upload.publicUrl,
       audioTranscript: transcriptText || null,
+      attachments: [
+        {
+          kind: "audio",
+          url: upload.publicUrl,
+          mimeType: upload.mimeType,
+          transcript: transcriptText || null,
+          storagePath: upload.path,
+          size: upload.size,
+        },
+      ],
       metadata: {
         storagePath: upload.path,
         mimeType: upload.mimeType,

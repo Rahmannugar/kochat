@@ -1,6 +1,7 @@
 const STATIC_CACHE = "kochat-static-v1"
 const RUNTIME_CACHE = "kochat-runtime-v1"
 const OFFLINE_URL = "/offline.html"
+const IS_DEV = self.location.search.includes("dev=1")
 const STATIC_ASSETS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
@@ -29,6 +30,10 @@ self.addEventListener("activate", (event) => {
 })
 
 self.addEventListener("fetch", (event) => {
+  if (IS_DEV) {
+    return
+  }
+
   if (event.request.method !== "GET") {
     return
   }

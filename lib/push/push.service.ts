@@ -57,6 +57,18 @@ const ensureWebPushConfigured = () => {
 
 const appIcon = "/images/kochat-logo.png"
 
+const logPushInfo = (message: string, details?: Record<string, unknown>) => {
+  console.info(`[push] ${message}`, details ?? {})
+}
+
+const logPushWarn = (message: string, details?: Record<string, unknown>) => {
+  console.warn(`[push] ${message}`, details ?? {})
+}
+
+const logPushError = (message: string, details?: Record<string, unknown>) => {
+  console.error(`[push] ${message}`, details ?? {})
+}
+
 export const pushService = {
   isConfigured: () => Boolean(getPushConfig()),
 
@@ -122,8 +134,24 @@ export const pushService = {
     userIds: string[]
     payload: PushPayload
   }) => {
-    if (userIds.length === 0 || !ensureWebPushConfigured()) {
-      return
+    if (userIds.length === 0) {
+      logPushInfo("Skipped send because there were no recipients.")
+      return {
+        sentCount: 0,
+        failureCount: 0,
+        skippedCount: 0,
+      }
+    }
+
+    if (!ensureWebPushConfigured()) {
+      logPushWarn("Skipped send because VAPID keys are not configured.", {
+        recipientCount: userIds.length,
+      })
+      return {
+        sentCount: 0,
+        failureCount: 0,
+        skippedCount: userIds.length,
+      }
     }
 
     const subscriptions = await db.query.pushSubscriptions.findMany({
@@ -131,7 +159,14 @@ export const pushService = {
     })
 
     if (subscriptions.length === 0) {
-      return
+      logPushInfo("Skipped send because recipients have no stored subscriptions.", {
+        recipientCount: userIds.length,
+      })
+      return {
+        sentCount: 0,
+        failureCount: 0,
+        skippedCount: userIds.length,
+      }
     }
 
     const serializedPayload = JSON.stringify({
@@ -139,6 +174,9 @@ export const pushService = {
       badge: appIcon,
       ...payload,
     })
+
+    let sentCount = 0
+    let failureCount = 0
 
     await Promise.all(
       subscriptions.map(async (subscription) => {
@@ -153,7 +191,9 @@ export const pushService = {
             },
             serializedPayload,
           )
+          sentCount += 1
         } catch (error) {
+          failureCount += 1
           const statusCode =
             typeof error === "object" &&
             error &&
@@ -167,9 +207,32 @@ export const pushService = {
               .delete(pushSubscriptions)
               .where(eq(pushSubscriptions.endpoint, subscription.endpoint))
           }
+
+          logPushError("Push send failed for subscription.", {
+            endpoint: subscription.endpoint,
+            userId: subscription.userId,
+            statusCode,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unknown push delivery error",
+          })
         }
       }),
     )
+
+    logPushInfo("Completed push delivery attempt.", {
+      requestedRecipients: userIds.length,
+      matchedSubscriptions: subscriptions.length,
+      sentCount,
+      failureCount,
+    })
+
+    return {
+      sentCount,
+      failureCount,
+      skippedCount: Math.max(0, userIds.length - subscriptions.length),
+    }
   },
 
   notifyRoomMembersAboutMessage: async ({
@@ -186,23 +249,31 @@ export const pushService = {
     preview: string
   }) => {
     if (!ensureWebPushConfigured()) {
+      logPushWarn("Skipped room notification because push is not configured.", {
+        roomId,
+      })
       return
     }
 
     const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
-    const activeUserIds = new Set(
-      realtimeState.getRoomSnapshot(roomId).activeUsers.map((activeUser) => activeUser.userId),
-    )
+    const activeUsers = realtimeState.getRoomSnapshot(roomId).activeUsers
+    const activeUserIds = new Set(activeUsers.map((activeUser) => activeUser.userId))
 
     const recipientUserIds = memberships
       .map((membership) => membership.userId)
       .filter((userId) => userId !== senderUserId && !activeUserIds.has(userId))
 
     if (recipientUserIds.length === 0) {
+      logPushInfo("Skipped room notification because every recipient is active or excluded.", {
+        roomId,
+        senderUserId,
+        memberCount: memberships.length,
+        activeUserIds: [...activeUserIds],
+      })
       return
     }
 
-    await pushService.sendToUsers({
+    const delivery = await pushService.sendToUsers({
       userIds: recipientUserIds,
       payload: {
         title: senderName,
@@ -214,6 +285,14 @@ export const pushService = {
           roomName,
         },
       },
+    })
+
+    logPushInfo("Room notification processed.", {
+      roomId,
+      senderUserId,
+      recipientUserIds,
+      activeUserIds: activeUsers.map((activeUser) => activeUser.userId),
+      delivery,
     })
   },
 }
