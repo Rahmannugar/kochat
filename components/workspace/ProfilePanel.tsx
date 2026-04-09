@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   CameraPlusIcon,
   CircleNotchIcon,
@@ -38,6 +40,8 @@ const getInitials = (value: string) =>
     .join("")
 
 export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [formValues, setFormValues] = useState({
     name: user.name,
@@ -97,6 +101,10 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
         username: response.data.username ?? "",
         bio: response.data.bio ?? "",
       })
+      await queryClient.invalidateQueries({
+        predicate: (query) => Array.isArray(query.queryKey) && query.queryKey[0] === "rooms",
+      })
+      router.refresh()
       toast.success("Profile updated.")
     } catch (profileError) {
       if (profileError instanceof ApiError) {
@@ -193,6 +201,10 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
 
       onUserChange(response.data.user)
       setAvatarPreviewUrl(null)
+      await queryClient.invalidateQueries({
+        predicate: (query) => Array.isArray(query.queryKey) && query.queryKey[0] === "rooms",
+      })
+      router.refresh()
       toast.success("Profile image updated.")
     } catch (avatarError) {
       if (avatarError instanceof ApiError) {
