@@ -16,9 +16,11 @@ using (
   and exists (
     select 1
     from public.room_members
+    inner join public."user"
+      on public."user".id = public.room_members.user_id
     where public.room_members.room_id::text = split_part(realtime.topic(), ':', 2)
-      and public.room_members.user_id =
-        ((current_setting('request.jwt.claims', true))::json ->> 'app_user_id')
+      and public."user".email =
+        ((current_setting('request.jwt.claims', true))::json ->> 'email')
       and public.room_members.archived_at is null
   )
 );
@@ -33,9 +35,11 @@ with check (
   and exists (
     select 1
     from public.room_members
+    inner join public."user"
+      on public."user".id = public.room_members.user_id
     where public.room_members.room_id::text = split_part(realtime.topic(), ':', 2)
-      and public.room_members.user_id =
-        ((current_setting('request.jwt.claims', true))::json ->> 'app_user_id')
+      and public."user".email =
+        ((current_setting('request.jwt.claims', true))::json ->> 'email')
       and public.room_members.archived_at is null
   )
 );
