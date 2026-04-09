@@ -61,7 +61,7 @@ export const acquireRoomChannel = async (roomId: string, userId: string) => {
   const supabase = getSupabaseBrowser()
   const token = await fetchRealtimeToken()
 
-  supabase.realtime.setAuth(token)
+  await supabase.realtime.setAuth(token)
 
   const channel = supabase.channel(getRoomTopic(roomId), {
     config: {
