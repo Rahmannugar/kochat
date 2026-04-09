@@ -49,7 +49,7 @@ export const userRepository = {
       .update(user)
       .set({
         name,
-        image: image ?? null,
+        ...(image !== undefined ? { image } : {}),
         ...(username ? { username } : {}),
         ...(bio !== undefined ? { bio } : {}),
         updatedAt: new Date(),

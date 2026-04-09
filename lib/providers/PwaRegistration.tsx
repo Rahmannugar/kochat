@@ -9,11 +9,6 @@ export const PwaRegistration = () => {
     }
 
     const manageServiceWorker = async () => {
-      if (process.env.NODE_ENV === "production") {
-        await navigator.serviceWorker.register("/sw.js")
-        return
-      }
-
       const registrations = await navigator.serviceWorker.getRegistrations()
       await Promise.all(
         registrations
@@ -21,7 +16,7 @@ export const PwaRegistration = () => {
           .map((registration) => registration.unregister()),
       )
 
-      if ("caches" in window) {
+      if (process.env.NODE_ENV !== "production" && "caches" in window) {
         const cacheKeys = await caches.keys()
         await Promise.all(
           cacheKeys
@@ -29,6 +24,11 @@ export const PwaRegistration = () => {
             .map((cacheKey) => caches.delete(cacheKey)),
         )
       }
+
+      const serviceWorkerUrl =
+        process.env.NODE_ENV === "production" ? "/sw.js" : "/sw.js?dev=1"
+
+      await navigator.serviceWorker.register(serviceWorkerUrl)
     }
 
     void manageServiceWorker()
