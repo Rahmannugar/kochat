@@ -12,7 +12,8 @@ import type {
 } from "@/lib/realtime/realtime-event.types"
 import type { PaginatedMessages } from "@/lib/messages/message.client.types"
 import { roomMessagesQueryKey } from "@/lib/rooms/useRoomMessages"
-import { acquireRoomChannel, releaseRoomChannel } from "@/lib/realtime/room-channel.client"
+import { getSupabaseBrowser } from "@/lib/supabase/browser"
+import { fetchRealtimeToken, getRoomTopic } from "@/lib/realtime/room-channel.client"
 import type { AuthUser } from "@/lib/auth/auth.types"
 
 type TypingSignalPayload = {
@@ -84,14 +85,24 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
 
     setConnectionState("connecting")
 
-    void acquireRoomChannel(roomId, user.id)
-      .then(async (joinedChannel) => {
-        if (!isMounted) {
-          await releaseRoomChannel(roomId)
-          return
-        }
+    void (async () => {
+      try {
+        const supabase = getSupabaseBrowser()
+        const token = await fetchRealtimeToken()
+        await supabase.realtime.setAuth(token)
 
-        channel = joinedChannel
+        channel = supabase.channel(getRoomTopic(roomId), {
+          config: {
+            private: true,
+            broadcast: {
+              self: false,
+              ack: true,
+            },
+            presence: {
+              key: user.id,
+            },
+          },
+        })
 
         channel.on("broadcast", { event: "message.created" }, ({ payload }) => {
           const roomEvent = payload as MessageCreatedEvent
@@ -180,22 +191,44 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
         })
 
         channel.on("presence", { event: "sync" }, () => {
-          setActiveUsers(mapPresenceStateToActiveUsers(channel!))
+          if (!isMounted || !channel) {
+            return
+          }
+
+          setActiveUsers(mapPresenceStateToActiveUsers(channel))
         })
 
-        setActiveUsers(mapPresenceStateToActiveUsers(channel))
-        setConnectionState("open")
-        void queryClient.invalidateQueries({
-          queryKey: roomMessagesQueryKey(roomId),
+        channel.subscribe((status) => {
+          if (!isMounted) {
+            return
+          }
+
+          if (status === "SUBSCRIBED") {
+            setActiveUsers(channel ? mapPresenceStateToActiveUsers(channel) : [])
+            setConnectionState("open")
+            void queryClient.invalidateQueries({
+              queryKey: roomMessagesQueryKey(roomId),
+            })
+            return
+          }
+
+          if (status === "CLOSED") {
+            setConnectionState("closed")
+            return
+          }
+
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            setConnectionState("error")
+          }
         })
-      })
-      .catch(() => {
+      } catch {
         if (!isMounted) {
           return
         }
 
         setConnectionState("error")
-      })
+      }
+    })()
 
     return () => {
       isMounted = false
@@ -204,8 +237,9 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
       setLatestEvent(null)
       pendingMessagesRef.current = []
 
-      if (roomId) {
-        void releaseRoomChannel(roomId)
+      if (channel) {
+        const supabase = getSupabaseBrowser()
+        void supabase.removeChannel(channel)
       }
     }
   }, [queryClient, roomId, user.id])

@@ -12,9 +12,9 @@ type RoomChannelEntry = {
 const roomChannels = new Map<string, RoomChannelEntry>()
 let realtimeTokenPromise: Promise<string> | null = null
 
-const getRoomTopic = (roomId: string) => `room:${roomId}`
+export const getRoomTopic = (roomId: string) => `room:${roomId}`
 
-const fetchRealtimeToken = async () => {
+export const fetchRealtimeToken = async () => {
   if (realtimeTokenPromise) {
     return realtimeTokenPromise
   }
