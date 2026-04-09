@@ -207,6 +207,8 @@ Reason:
 - presence and broadcast features fit room activity naturally, covering active users, typing state, message delivery, and receipt updates in one transport layer
 - private channels plus Realtime authorization keep room access aligned with application membership rules
 
+The Realtime policy in `scripts/realtime.sql` allows users to subscribe to and publish room events only when they are authenticated and have an active membership in the matching `public.room_members` record for that room.
+
 ## Module Organization
 
 ### Auth
@@ -460,8 +462,8 @@ This was handled selectively where it mattered most:
 There are still tradeoffs:
 
 - this is not a globally distributed websocket system
-- presence/typing are in-memory room state on the app server
-- acceptable for the project scope, but not a final horizontally scaled design
+- realtime behavior depends on Supabase Realtime channel delivery and policy configuration
+- acceptable for the project scope, but not a final multi-region collaboration design
 
 ## Search Implementation
 
@@ -525,8 +527,7 @@ Current notification behavior:
 
 ## Tradeoffs and Known Limitations
 
-- realtime transport is SSE, not a full websocket mesh
-- presence and typing are in-memory room state on the server
+- realtime delivery depends on Supabase Realtime private channels and room membership policies being configured correctly
 - search is not yet full-text indexed
 - PWA is installable but not offline-first chat sync
 - push notifications require VAPID setup and browser permission
@@ -535,7 +536,7 @@ Current notification behavior:
 ## What I Would Improve With More Time
 
 - move search to PostgreSQL full-text or `pg_trgm`
-- add stronger cross-instance presence/typing storage if horizontal scaling was needed
+- add richer moderation, reactions, and thread-level collaboration features
 - add queued offline actions and smarter cache hydration
 - add richer notification preferences per room/user
 - add reactions, replies

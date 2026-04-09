@@ -6,6 +6,7 @@ type RequiredServerEnvKey =
   | "GOOGLE_CLIENT_SECRET"
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
+  | "SUPABASE_JWT_SECRET"
   | "SMTP_HOST"
   | "SMTP_PORT"
   | "SMTP_USER"
@@ -20,6 +21,7 @@ type ServerEnv = {
   GOOGLE_CLIENT_SECRET: string
   NEXT_PUBLIC_SUPABASE_URL: string
   SUPABASE_SERVICE_ROLE_KEY: string
+  SUPABASE_JWT_SECRET: string
   SMTP_HOST: string
   SMTP_PORT: number
   SMTP_USER: string
@@ -35,7 +37,6 @@ type ServerEnv = {
   VAPID_SUBJECT?: string
   VAPID_PUBLIC_KEY?: string
   VAPID_PRIVATE_KEY?: string
-  SUPABASE_JWT_SECRET?: string
 }
 
 let cachedEnv: ServerEnv | undefined;
@@ -48,6 +49,7 @@ const requiredKeys: RequiredServerEnvKey[] = [
   "GOOGLE_CLIENT_SECRET",
   "NEXT_PUBLIC_SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_JWT_SECRET",
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_USER",
@@ -91,7 +93,7 @@ export const getServerEnv = () => {
     VAPID_SUBJECT: process.env.VAPID_SUBJECT,
     VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-    SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+    SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET as string,
   }
 
   return cachedEnv
