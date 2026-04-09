@@ -8,6 +8,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { MessageAttachment } from "@/lib/messages/message.client.types";
 import { messageSenderEnum, messageTypeEnum } from "./enums";
 import { rooms } from "./room";
 import { user } from "./user";
@@ -28,8 +29,13 @@ export const messages = pgTable(
     imageUrl: text("image_url"),
     audioUrl: text("audio_url"),
     audioTranscript: text("audio_transcript"),
+<<<<<<< HEAD
     attachments: jsonb("attachments"),
     metadata: jsonb("metadata"),
+=======
+    attachments: jsonb("attachments").$type<MessageAttachment[] | null>(),
+    metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
+>>>>>>> 858474d (fix: resolve type errors)
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },

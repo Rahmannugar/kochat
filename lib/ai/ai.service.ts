@@ -2,6 +2,7 @@ import { AI_SYSTEM_PROMPT } from "@/lib/ai/ai.config";
 import { consumeAiUsage } from "@/lib/ai/ai-usage.utils";
 import { getAiClient } from "@/lib/ai/ai-client";
 import type { AiImageInput, AiPromptMessage } from "@/lib/ai/ai.types";
+import type { MessageAttachment } from "@/lib/messages/message.client.types";
 import { messageRepository } from "@/lib/messages/message.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
 import { roomRepository } from "@/lib/rooms/room.repository";
@@ -65,6 +66,7 @@ const getMessagePromptContent = (message: {
   messageType: "text" | "image" | "voice"
   content: string
   audioTranscript: string | null
+<<<<<<< HEAD
   attachments: Array<{
     kind: "image" | "audio"
     transcript?: string | null
@@ -72,6 +74,15 @@ const getMessagePromptContent = (message: {
 }) => {
   const audioAttachment = message.attachments?.find(
     (attachment) => attachment.kind === "audio" && attachment.transcript,
+=======
+  attachments: MessageAttachment[] | null
+}) => {
+  const audioAttachment = message.attachments?.find(
+    (
+      attachment,
+    ): attachment is Extract<MessageAttachment, { kind: "audio" }> =>
+      attachment.kind === "audio" && Boolean(attachment.transcript),
+>>>>>>> 858474d (fix: resolve type errors)
   )
 
   if (message.messageType === "image" && !message.content) {

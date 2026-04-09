@@ -3,7 +3,7 @@ import type { AuthRailContext } from "./auth.types"
 
 export const authenticatedRail = createRail<AuthRailContext>("authenticated", [
   requireAuth("/sign-in"),
-  (ctx) => {
+  async (ctx) => {
     if (!ctx.isEmailVerified) {
       return {
         decision: {
