@@ -4,38 +4,6 @@ import { createClient } from "@supabase/supabase-js"
 
 let cachedBrowserClient: ReturnType<typeof createClient> | undefined
 
-const fetchRealtimeToken = async () => {
-  const response = await fetch("/api/realtime/token", {
-    method: "GET",
-    credentials: "same-origin",
-    cache: "no-store",
-  })
-
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => "")
-    console.error("[realtime] failed to fetch token", {
-      status: response.status,
-      body: errorBody,
-    })
-    throw new Error("Unable to authorize realtime channels")
-  }
-
-  const payload = (await response.json()) as {
-    data?: {
-      token?: string
-    }
-  }
-
-  const token = payload.data?.token
-
-  if (!token) {
-    console.error("[realtime] token response missing token", payload)
-    throw new Error("Realtime token was not returned")
-  }
-
-  return token
-}
-
 export const getSupabaseBrowser = () => {
   if (cachedBrowserClient) {
     return cachedBrowserClient
@@ -54,7 +22,6 @@ export const getSupabaseBrowser = () => {
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
-    accessToken: fetchRealtimeToken,
     realtime: {
       params: {
         log_level: "info",

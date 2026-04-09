@@ -92,10 +92,8 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
     void (async () => {
       try {
         const supabase = getSupabaseBrowser()
-        await supabase.realtime.setAuth()
         channel = supabase.channel(getRoomTopic(roomId), {
           config: {
-            private: true,
             broadcast: {
               self: false,
               ack: true,

@@ -25,10 +25,7 @@ Kochat is a real-time workspace chat application. It combines direct messages, p
    - `npm run db:push`
 4. Create storage buckets
    - `npm run buckets:create`
-5. Apply Supabase Realtime policies
-   - open the Supabase SQL editor
-   - run `scripts/realtime.sql`
-6. Run the app
+5. Run the app
    - `npm run dev`
 
 For PWA testing:
@@ -49,7 +46,6 @@ GITHUB_CLIENT_SECRET=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_JWT_SECRET=
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
@@ -205,9 +201,9 @@ Reason:
 
 - it provides managed low-latency channels for chat events without the app owning websocket infrastructure directly
 - presence and broadcast features fit room activity naturally, covering active users, typing state, message delivery, and receipt updates in one transport layer
-- private channels plus Realtime authorization keep room access aligned with application membership rules
+- it works well alongside BetterAuth, while the application keeps the real security boundary on the server through authenticated room access checks before users can load rooms, messages, or room actions
 
-The Realtime policy in `scripts/realtime.sql` allows users to subscribe to and publish room events only when they are authenticated and have an active membership in the matching `public.room_members` record for that room.
+Kochat uses BetterAuth as the primary auth system, so room security is enforced in the application layer through authenticated room membership checks in pages, services, and API routes. Supabase Realtime is used as the transport for live updates rather than the primary access-control system.
 
 ## Module Organization
 
@@ -244,7 +240,7 @@ The Realtime policy in `scripts/realtime.sql` allows users to subscribe to and p
 - [lib/realtime/room-events.ts](/Users/macbook/Codes/Projects/kochat/lib/realtime/room-events.ts)
   - server-side room event broadcasting through Supabase Realtime
 - [lib/realtime/room-channel.client.ts](/Users/macbook/Codes/Projects/kochat/lib/realtime/room-channel.client.ts)
-  - browser room-channel acquisition and auth bridge
+  - browser room-channel acquisition
 - [lib/rooms/useRoomEvents.ts](/Users/macbook/Codes/Projects/kochat/lib/rooms/useRoomEvents.ts)
   - client room channel subscription
 
@@ -319,10 +315,9 @@ App routes require:
 
 ### Transport
 
-Real-time room updates use Supabase Realtime private channels:
+Real-time room updates use Supabase Realtime room channels:
 
-- client requests a short-lived Realtime token from `/api/realtime/token`
-- browser joins a private `room:<roomId>` channel
+- browser joins a `room:<roomId>` channel
 - server publishes room events through Supabase Broadcast
 
 ### Event types
@@ -527,7 +522,7 @@ Current notification behavior:
 
 ## Tradeoffs and Known Limitations
 
-- realtime delivery depends on Supabase Realtime private channels and room membership policies being configured correctly
+- realtime delivery depends on Supabase Realtime channel availability and the application’s room access checks remaining the source of truth
 - search is not yet full-text indexed
 - PWA is installable but not offline-first chat sync
 - push notifications require VAPID setup and browser permission
