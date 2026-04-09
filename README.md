@@ -457,7 +457,7 @@ This was handled selectively where it mattered most:
 There are still tradeoffs:
 
 - this is not a globally distributed websocket system
-- realtime behavior depends on Supabase Realtime channel delivery and policy configuration
+- realtime behavior depends on Supabase Realtime channel access and the application’s room access checks
 - acceptable for the project scope, but not a final multi-region collaboration design
 
 ## Search Implementation

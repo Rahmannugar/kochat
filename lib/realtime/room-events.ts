@@ -26,7 +26,7 @@ export const roomEvents = {
               topic: getRoomTopic(event.roomId),
               event: event.type,
               payload,
-              private: true,
+              private: false,
             },
           ],
         }),
