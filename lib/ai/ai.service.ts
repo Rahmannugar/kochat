@@ -66,15 +66,6 @@ const getMessagePromptContent = (message: {
   messageType: "text" | "image" | "voice"
   content: string
   audioTranscript: string | null
-<<<<<<< HEAD
-  attachments: Array<{
-    kind: "image" | "audio"
-    transcript?: string | null
-  }> | null
-}) => {
-  const audioAttachment = message.attachments?.find(
-    (attachment) => attachment.kind === "audio" && attachment.transcript,
-=======
   attachments: MessageAttachment[] | null
 }) => {
   const audioAttachment = message.attachments?.find(
@@ -82,7 +73,6 @@ const getMessagePromptContent = (message: {
       attachment,
     ): attachment is Extract<MessageAttachment, { kind: "audio" }> =>
       attachment.kind === "audio" && Boolean(attachment.transcript),
->>>>>>> 858474d (fix: resolve type errors)
   )
 
   if (message.messageType === "image" && !message.content) {
