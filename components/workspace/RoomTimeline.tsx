@@ -400,6 +400,9 @@ export const RoomTimeline = ({
       .reverse()
       .flatMap((page) => [...page.items].reverse());
   }, [messagesQuery.data]);
+  const hasFocusedMessageLoaded = focusedMessageId
+    ? messages.some((message) => message.id === focusedMessageId)
+    : false
 
   const otherTypingUsers = typingUsers.filter(
     (typingUser) => typingUser.userId !== user.id,
@@ -513,19 +516,32 @@ export const RoomTimeline = ({
       return;
     }
 
+    if (!hasFocusedMessageLoaded) {
+      if (messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage) {
+        void messagesQuery.fetchNextPage()
+      }
+      return;
+    }
+
     const messageElement = container.querySelector<HTMLElement>(
       `[data-message-id="${focusedMessageId}"]`,
     );
 
     if (!messageElement) {
-      return;
+      return
     }
 
     messageElement.scrollIntoView({
       block: "center",
       behavior: "smooth",
     });
-  }, [focusedMessageId, messages]);
+  }, [
+    focusedMessageId,
+    hasFocusedMessageLoaded,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+    messagesQuery.fetchNextPage,
+  ]);
 
   useEffect(() => {
     const latestMessage = messages[messages.length - 1];
