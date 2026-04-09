@@ -35,6 +35,7 @@ type ServerEnv = {
   VAPID_SUBJECT?: string
   VAPID_PUBLIC_KEY?: string
   VAPID_PRIVATE_KEY?: string
+  SUPABASE_JWT_SECRET?: string
 }
 
 let cachedEnv: ServerEnv | undefined;
@@ -90,6 +91,7 @@ export const getServerEnv = () => {
     VAPID_SUBJECT: process.env.VAPID_SUBJECT,
     VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
   }
 
   return cachedEnv

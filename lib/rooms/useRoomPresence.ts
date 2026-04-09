@@ -1,52 +1,72 @@
 "use client"
 
 import { useEffect } from "react"
-import { apiClient } from "@/lib/utils/client"
+import type { RealtimeChannel } from "@supabase/supabase-js"
+import type { AuthUser } from "@/lib/auth/auth.types"
+import { acquireRoomChannel, releaseRoomChannel } from "@/lib/realtime/room-channel.client"
 
 const PRESENCE_HEARTBEAT_MS = 20_000
 
-type ApiResponse<T> = {
-  data: T
-}
-
-export const useRoomPresence = (roomId?: string) => {
+export const useRoomPresence = (roomId: string | undefined, user: AuthUser) => {
   useEffect(() => {
     if (!roomId) {
       return
     }
 
-    const sendPresence = async (active: boolean) => {
+    let isMounted = true
+    let channel: RealtimeChannel | null = null
+
+    const trackPresence = async (active: boolean) => {
+      if (!channel) {
+        return
+      }
+
       try {
-        await apiClient.post<ApiResponse<{ activeUsers: unknown[] }>>(
-          `/rooms/${roomId}/presence`,
-          { active },
-          active
-            ? undefined
-            : {
-                keepalive: true,
-              },
-        )
+        if (active) {
+          await channel.track({
+            userId: user.id,
+            userName: user.name ?? user.username ?? null,
+            image: user.image ?? null,
+            lastSeenAt: new Date().toISOString(),
+          })
+          return
+        }
+
+        await channel.untrack()
       } catch {
-        // Presence is best-effort; ignore shutdown/visibility transport failures.
+        // Presence is best-effort in the client.
       }
     }
 
-    void sendPresence(true)
+    void acquireRoomChannel(roomId, user.id)
+      .then(async (joinedChannel) => {
+        if (!isMounted) {
+          await releaseRoomChannel(roomId)
+          return
+        }
+
+        channel = joinedChannel
+        await trackPresence(true)
+      })
+      .catch(() => {})
 
     const heartbeatId = setInterval(() => {
-      void sendPresence(true)
+      void trackPresence(!document.hidden)
     }, PRESENCE_HEARTBEAT_MS)
 
     const handleVisibilityChange = () => {
-      void sendPresence(!document.hidden)
+      void trackPresence(!document.hidden)
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
+      isMounted = false
       clearInterval(heartbeatId)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
-      void sendPresence(false)
+      void trackPresence(false).finally(() => {
+        void releaseRoomChannel(roomId)
+      })
     }
-  }, [roomId])
+  }, [roomId, user.id, user.image, user.name, user.username])
 }

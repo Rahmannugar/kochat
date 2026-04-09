@@ -389,7 +389,7 @@ export const RoomTimeline = ({
     roomId: room.id,
   });
 
-  useRoomPresence(room.id);
+  useRoomPresence(room.id, user);
 
   const messages = useMemo(() => {
     if (!messagesQuery.data) {

@@ -1,89 +1,37 @@
-import { Client } from "pg"
-import { pool } from "@/lib/db"
 import { getServerEnv } from "@/lib/env/server"
 import { RoomEvent } from "@/lib/realtime/realtime.types"
 
-const ROOM_EVENTS_CHANNEL = "kochat_room_events"
-
-type RoomSubscriber = (event: RoomEvent) => void
-
-let listenerClientPromise: Promise<Client> | undefined
-const roomSubscribers = new Map<string, Set<RoomSubscriber>>()
-
-const deliverEvent = (event: RoomEvent) => {
-  const subscribers = roomSubscribers.get(event.roomId)
-
-  if (!subscribers?.size) {
-    return
-  }
-
-  for (const subscriber of subscribers) {
-    subscriber(event)
-  }
-}
-
-const ensureListenerClient = async () => {
-  if (!listenerClientPromise) {
-    listenerClientPromise = (async () => {
-      const client = new Client({
-        connectionString: getServerEnv().DATABASE_URL,
-      })
-
-      await client.connect()
-      await client.query(`LISTEN ${ROOM_EVENTS_CHANNEL}`)
-      client.on("notification", (notification) => {
-        if (!notification.payload) {
-          return
-        }
-
-        try {
-          const event = JSON.parse(notification.payload) as RoomEvent
-          deliverEvent(event)
-        } catch {
-          // Ignore malformed notifications so one bad payload doesn't kill the stream fanout.
-        }
-      })
-
-      client.on("error", () => {
-        listenerClientPromise = undefined
-      })
-
-      return client
-    })()
-  }
-
-  return listenerClientPromise
-}
+const getRoomTopic = (roomId: string) => `room:${roomId}`
 
 export const roomEvents = {
   publish: async <TPayload>(event: Omit<RoomEvent<TPayload>, "occurredAt"> & { occurredAt?: string }) => {
-    const payload = JSON.stringify({
+    const env = getServerEnv()
+    const payload = {
       ...event,
       occurredAt: event.occurredAt ?? new Date().toISOString(),
-    })
+    }
 
-    await pool.query("select pg_notify($1, $2)", [ROOM_EVENTS_CHANNEL, payload])
-  },
+    const response = await fetch(
+      `${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/broadcast`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          topic: getRoomTopic(event.roomId),
+          event: event.type,
+          payload,
+          private: true,
+        }),
+      },
+    )
 
-  subscribe: async (roomId: string, subscriber: RoomSubscriber) => {
-    await ensureListenerClient()
-
-    const currentSubscribers = roomSubscribers.get(roomId) ?? new Set<RoomSubscriber>()
-    currentSubscribers.add(subscriber)
-    roomSubscribers.set(roomId, currentSubscribers)
-
-    return () => {
-      const subscribers = roomSubscribers.get(roomId)
-
-      if (!subscribers) {
-        return
-      }
-
-      subscribers.delete(subscriber)
-
-      if (subscribers.size === 0) {
-        roomSubscribers.delete(roomId)
-      }
+    if (!response.ok) {
+      const errorBody = await response.text()
+      throw new Error(`Failed to broadcast realtime room event: ${errorBody || response.statusText}`)
     }
   },
 }

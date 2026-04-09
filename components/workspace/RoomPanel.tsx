@@ -17,7 +17,7 @@ type RoomPanelProps = {
 
 export const RoomPanel = ({ room, user }: RoomPanelProps) => {
   const aiStream = useAiStream(room.id)
-  const roomEvents = useRoomEvents(room.id)
+  const roomEvents = useRoomEvents(room.id, user)
   const [focusedMessageId, setFocusedMessageId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<"messages" | "members">("messages")
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -56,7 +56,7 @@ export const RoomPanel = ({ room, user }: RoomPanelProps) => {
             activeUsers={roomEvents.activeUsers}
             onOpenMembers={() => setActiveView("members")}
           />
-          <RoomComposer roomId={room.id} onAiTrigger={aiStream.startStream} />
+          <RoomComposer roomId={room.id} user={user} onAiTrigger={aiStream.startStream} />
         </>
       ) : (
         <RoomMembersPanel

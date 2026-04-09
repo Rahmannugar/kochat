@@ -25,7 +25,10 @@ Kochat is a real-time workspace chat application. It combines direct messages, p
    - `npm run db:push`
 4. Create storage buckets
    - `npm run buckets:create`
-5. Run the app
+5. Apply Supabase Realtime policies
+   - open the Supabase SQL editor
+   - run `scripts/realtime.sql`
+6. Run the app
    - `npm run dev`
 
 For PWA testing:
@@ -46,6 +49,7 @@ GITHUB_CLIENT_SECRET=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_JWT_SECRET=
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
@@ -193,15 +197,15 @@ In short, the app benefits from:
 
 instead of a more document-oriented data model.
 
-### Why SSE for real-time UI updates
+### Why Supabase Realtime for room updates
 
-The app uses Server-Sent Events for the main room event stream instead of browser-side Supabase Realtime.
+The app uses Supabase Realtime for room messaging, presence, typing, and receipt events.
 
 Reason:
 
-- the app’s auth source of truth is BetterAuth
-- server-side authorization is already enforced through routes and services
-- SSE let the app reuse existing server auth decisions without needing a Supabase-auth identity bridge
+- it provides managed low-latency channels for chat events without the app owning websocket infrastructure directly
+- presence and broadcast features fit room activity naturally, covering active users, typing state, message delivery, and receipt updates in one transport layer
+- private channels plus Realtime authorization keep room access aligned with application membership rules
 
 ## Module Organization
 
@@ -236,11 +240,11 @@ Reason:
 ### Realtime
 
 - [lib/realtime/room-events.ts](/Users/macbook/Codes/Projects/kochat/lib/realtime/room-events.ts)
-  - Postgres-backed event fanout
-- [lib/realtime/realtime-state.ts](/Users/macbook/Codes/Projects/kochat/lib/realtime/realtime-state.ts)
-  - in-memory typing and presence state
+  - server-side room event broadcasting through Supabase Realtime
+- [lib/realtime/room-channel.client.ts](/Users/macbook/Codes/Projects/kochat/lib/realtime/room-channel.client.ts)
+  - browser room-channel acquisition and auth bridge
 - [lib/rooms/useRoomEvents.ts](/Users/macbook/Codes/Projects/kochat/lib/rooms/useRoomEvents.ts)
-  - client SSE subscription
+  - client room channel subscription
 
 ### AI
 
@@ -313,11 +317,11 @@ App routes require:
 
 ### Transport
 
-Real-time room updates use SSE:
+Real-time room updates use Supabase Realtime private channels:
 
-- client opens `GET /api/rooms/[roomId]/events`
-- server verifies room access
-- server streams events for that room
+- client requests a short-lived Realtime token from `/api/realtime/token`
+- browser joins a private `room:<roomId>` channel
+- server publishes room events through Supabase Broadcast
 
 ### Event types
 
@@ -334,19 +338,18 @@ Presence is room-scoped, not global account/session presence.
 
 Flow:
 
-1. While a room is open, the client posts heartbeats to `/presence`.
-2. The server stores a short-lived active snapshot in memory.
-3. SSE broadcasts `presence.updated`.
-4. If heartbeats stop, the user expires from the room snapshot.
+1. While a room is open, the client tracks itself on the private room channel.
+2. Supabase Presence maintains the room-scoped active member snapshot.
+3. The room listener converts that snapshot into `activeUsers`.
+4. If tracking stops or the tab disconnects, the presence entry disappears from the room.
 
 ### Typing
 
 Flow:
 
-1. Composer sends typing pings to `/typing`.
-2. The server stores a short-lived typing state.
-3. SSE broadcasts `typing.updated`.
-4. Typing entries expire automatically.
+1. Composer broadcasts `typing.updated` on the room channel.
+2. Other subscribed clients receive the typing signal immediately.
+3. Typing indicators are kept short-lived on the client with an expiry window.
 
 ### Messages
 
@@ -366,7 +369,7 @@ Flow:
 1. Each membership stores `lastReadMessageId` and `lastReadAt`.
 2. When the user is effectively at the latest point in the room, the timeline marks the latest message as read.
 3. Receipt summaries are derived per message from membership read state.
-4. SSE emits `receipts.updated`, and clients refresh message summaries.
+4. Realtime emits `receipts.updated`, and clients refresh message summaries.
 
 ## How the AI Assistant Works
 

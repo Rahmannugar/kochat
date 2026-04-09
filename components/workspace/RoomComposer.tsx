@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useRoomTyping } from "@/lib/rooms/useRoomTyping"
 import { useRoomComposer } from "@/lib/rooms/useRoomComposer"
+import type { AuthUser } from "@/lib/auth/auth.types"
 import {
   AI_USAGE_MAX_REQUESTS_PER_WINDOW,
   AI_USAGE_WINDOW_MS,
@@ -36,6 +37,7 @@ import {
 
 type RoomComposerProps = {
   roomId: string
+  user: AuthUser
   onAiTrigger: (messageId: string) => Promise<unknown>
 }
 
@@ -71,7 +73,7 @@ const formatDuration = (valueMs: number) => {
   return `${minutes}:${String(seconds).padStart(2, "0")}`
 }
 
-export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
+export const RoomComposer = ({ roomId, user, onAiTrigger }: RoomComposerProps) => {
   const { resolvedTheme } = useTheme()
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -102,6 +104,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
   })
   const { notifyTyping } = useRoomTyping({
     roomId,
+    user,
   })
 
   const isBusy = isSendingMessage || isUploadingImage || isUploadingVoice
