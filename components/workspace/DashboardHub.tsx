@@ -91,8 +91,9 @@ export const DashboardHub = ({ user }: DashboardHubProps) => {
     setIsSubmittingDirect(true)
 
     try {
-      const searchResponse = await apiClient.get<ApiResponse<SearchUserResponse>>(
-        `/users/search?query=${encodeURIComponent(query)}`,
+      const searchResponse = await apiClient.post<ApiResponse<SearchUserResponse>>(
+        "/users/lookup",
+        { query },
       )
       const roomResponse = await apiClient.post<ApiResponse<RoomResponse>>("/rooms/direct", {
         targetUserId: searchResponse.data.id,
