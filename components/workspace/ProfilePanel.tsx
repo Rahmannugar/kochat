@@ -143,7 +143,7 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
         : isPushSubscribed
           ? "Notifications are currently enabled on this device."
           : pushPermission === "denied"
-            ? "Notification permission is blocked in this browser."
+            ? "Notifications are blocked in your browser settings. Enable them for this site and refresh."
             : "Notifications are currently off on this device."
 
   const handleAvatarSelect = async (

@@ -95,7 +95,7 @@ export const usePushNotifications = () => {
 
       if (Notification.permission === "denied") {
         setPermission("denied")
-        setError("Notification permission is blocked in this browser. Update your site settings to enable it.")
+        setError("Notifications are blocked in your browser settings. Enable them for this site and refresh.")
         return false
       }
 
@@ -106,7 +106,7 @@ export const usePushNotifications = () => {
       setPermission(nextPermission)
 
       if (nextPermission !== "granted") {
-        setError("Notification permission is required before notifications can be enabled.")
+        setError("Notifications are blocked in your browser settings. Enable them for this site and refresh.")
         return false
       }
 
