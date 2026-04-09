@@ -17,9 +17,13 @@ import { useEmailOtp } from "@/lib/auth/useEmailOtp";
 
 type VerifyEmailFormProps = {
   email: string;
+  sessionEmail?: string | null;
 };
 
-export const VerifyEmailForm = ({ email }: VerifyEmailFormProps) => {
+export const VerifyEmailForm = ({
+  email,
+  sessionEmail = null,
+}: VerifyEmailFormProps) => {
   const router = useRouter();
   const { sendOtp, verifyEmail, isPending, error } = useEmailOtp();
   const [notice, setNotice] = useState("");
@@ -51,7 +55,7 @@ export const VerifyEmailForm = ({ email }: VerifyEmailFormProps) => {
       otp,
     });
 
-    router.replace("/dashboard")
+    router.replace(sessionEmail === email ? "/dashboard" : "/sign-in")
   });
 
   const handleResend = async () => {

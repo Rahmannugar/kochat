@@ -58,7 +58,7 @@ export const SignUpForm = () => {
       });
     } catch {}
 
-    router.replace("/verify-email");
+    router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
   });
 
   const handleGoogleSignIn = () => {
