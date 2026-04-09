@@ -28,3 +28,13 @@ export const joinGroupRoomSchema = z.object({
 export const createDirectRoomSchema = z.object({
   targetUserId: z.string().trim().min(1, "Target user id is required"),
 })
+
+export const searchRoomsSchema = z.object({
+  query: z
+    .string()
+    .trim()
+    .min(1, "Enter a room, username, or email to search")
+    .max(100, "Search must be 100 characters or fewer"),
+  limit: z.coerce.number().int().min(1).max(20).default(10),
+  cursor: z.string().trim().min(1).optional(),
+})

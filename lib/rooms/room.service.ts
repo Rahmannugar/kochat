@@ -184,6 +184,39 @@ export const roomService = {
     }
   },
 
+  searchRoomsPageForUser: async ({
+    userId,
+    query,
+    limit = 10,
+    cursor,
+  }: {
+    userId: string
+    query: string
+    limit?: number
+    cursor?: string
+  }) => {
+    const page = await roomRepository.searchForUser({
+      userId,
+      query,
+      limit,
+      cursorId: cursor,
+    })
+
+    const items = await Promise.all(
+      page.slice(0, limit).map((membership) =>
+        withMembershipRoomDisplayName(membership, userId),
+      ),
+    )
+
+    return {
+      items,
+      pageInfo: {
+        hasNextPage: page.length > limit,
+        nextCursor: page.length > limit ? page[limit - 1]?.id ?? null : null,
+      },
+    }
+  },
+
   getRoomForUser: async (roomId: string, userId: string) => {
     const membership = await roomRepository.findMembership(roomId, userId);
 
