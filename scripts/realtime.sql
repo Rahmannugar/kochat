@@ -10,7 +10,7 @@ using (
     select 1
     from public.room_members
     where public.room_members.room_id::text = split_part(realtime.topic(), ':', 2)
-      and public.room_members.user_id = auth.jwt() ->> 'sub'
+      and public.room_members.user_id = auth.jwt() ->> 'app_user_id'
       and public.room_members.archived_at is null
   )
 );
@@ -25,7 +25,7 @@ with check (
     select 1
     from public.room_members
     where public.room_members.room_id::text = split_part(realtime.topic(), ':', 2)
-      and public.room_members.user_id = auth.jwt() ->> 'sub'
+      and public.room_members.user_id = auth.jwt() ->> 'app_user_id'
       and public.room_members.archived_at is null
   )
 );
