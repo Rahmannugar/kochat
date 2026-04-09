@@ -1,5 +1,5 @@
-const STATIC_CACHE = "kochat-static-v1"
-const RUNTIME_CACHE = "kochat-runtime-v1"
+const STATIC_CACHE = "kochat-static-v2"
+const RUNTIME_CACHE = "kochat-runtime-v2"
 const OFFLINE_URL = "/offline.html"
 const IS_DEV = self.location.search.includes("dev=1")
 const STATIC_ASSETS = [
@@ -41,6 +41,10 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url)
 
   if (requestUrl.origin !== self.location.origin) {
+    return
+  }
+
+  if (requestUrl.pathname.startsWith("/api/")) {
     return
   }
 
