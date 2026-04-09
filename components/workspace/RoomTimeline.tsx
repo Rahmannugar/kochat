@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowDownIcon,
   CircleNotchIcon,
@@ -9,42 +9,48 @@ import {
   UsersThreeIcon,
   WifiHighIcon,
   WifiSlashIcon,
-} from "@phosphor-icons/react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useRoomMessages } from "@/lib/rooms/useRoomMessages"
-import { useRoomPresence } from "@/lib/rooms/useRoomPresence"
-import { apiClient } from "@/lib/utils/client"
-import type { MessageAttachment, RoomEventMessage } from "@/lib/messages/message.client.types"
-import type { RoomListItem } from "@/lib/rooms/room.client.types"
-import type { AuthUser } from "@/lib/auth/auth.types"
-import type { ActiveUser, TypingUser } from "@/lib/realtime/realtime-event.types"
-import { cn } from "@/lib/utils"
+} from "@phosphor-icons/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRoomMessages } from "@/lib/rooms/useRoomMessages";
+import { useRoomPresence } from "@/lib/rooms/useRoomPresence";
+import { apiClient } from "@/lib/utils/client";
+import type {
+  MessageAttachment,
+  RoomEventMessage,
+} from "@/lib/messages/message.client.types";
+import type { RoomListItem } from "@/lib/rooms/room.client.types";
+import type { AuthUser } from "@/lib/auth/auth.types";
+import type {
+  ActiveUser,
+  TypingUser,
+} from "@/lib/realtime/realtime-event.types";
+import { cn } from "@/lib/utils";
 
-const AI_MENTION_PATTERN = /@ai\b/gi
+const AI_MENTION_PATTERN = /@ai\b/gi;
 
 type RoomTimelineProps = {
-  room: RoomListItem["room"]
-  user: AuthUser
-  streamedAiText?: string
-  isAiStreaming?: boolean
-  focusedMessageId?: string | null
-  connectionState: "idle" | "connecting" | "open" | "closed" | "error"
-  typingUsers: TypingUser[]
-  activeUsers: ActiveUser[]
-  onOpenMembers?: () => void
-}
+  room: RoomListItem["room"];
+  user: AuthUser;
+  streamedAiText?: string;
+  isAiStreaming?: boolean;
+  focusedMessageId?: string | null;
+  connectionState: "idle" | "connecting" | "open" | "closed" | "error";
+  typingUsers: TypingUser[];
+  activeUsers: ActiveUser[];
+  onOpenMembers?: () => void;
+};
 
 const formatTime = (value: string | Date) => {
-  const date = value instanceof Date ? value : new Date(value)
+  const date = value instanceof Date ? value : new Date(value);
 
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
-  }).format(date)
-}
+  }).format(date);
+};
 
 const getInitials = (value: string | null | undefined) =>
   (value ?? "K")
@@ -52,46 +58,46 @@ const getInitials = (value: string | null | undefined) =>
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
+    .join("");
 
 const getConnectionLabel = (
   connectionState: "idle" | "connecting" | "open" | "closed" | "error",
 ) => {
   switch (connectionState) {
     case "open":
-      return "Live"
+      return "Live";
     case "connecting":
-      return "Connecting"
+      return "Connecting";
     case "error":
-      return "Reconnect needed"
+      return "Reconnect needed";
     case "closed":
-      return "Closed"
+      return "Closed";
     default:
-      return "Idle"
+      return "Idle";
   }
-}
+};
 
 const getReceiptLabel = (message: RoomEventMessage) => {
-  const receiptSummary = message.receiptSummary
+  const receiptSummary = message.receiptSummary;
 
   if (!receiptSummary) {
-    return null
+    return null;
   }
 
   if (receiptSummary.recipientCount <= 1) {
-    return receiptSummary.status === "read" ? "Read" : "Delivered"
+    return receiptSummary.status === "read" ? "Read" : "Delivered";
   }
 
   if (receiptSummary.status === "read") {
-    return `Read by ${receiptSummary.readCount}`
+    return `Read by ${receiptSummary.readCount}`;
   }
 
-  return `Delivered to ${receiptSummary.recipientCount}`
-}
+  return `Delivered to ${receiptSummary.recipientCount}`;
+};
 
 const renderMessageContent = (content: string, isOwnMessage: boolean) => {
-  const parts = content.split(AI_MENTION_PATTERN)
-  const mentions = content.match(AI_MENTION_PATTERN) ?? []
+  const parts = content.split(AI_MENTION_PATTERN);
+  const mentions = content.match(AI_MENTION_PATTERN) ?? [];
 
   return (
     <p className="whitespace-pre-wrap break-words text-sm leading-6">
@@ -102,7 +108,9 @@ const renderMessageContent = (content: string, isOwnMessage: boolean) => {
             <span
               className={cn(
                 "font-semibold",
-                isOwnMessage ? "text-primary-foreground/90" : "text-sky-700 dark:text-sky-300",
+                isOwnMessage
+                  ? "text-primary-foreground/90"
+                  : "text-sky-700 dark:text-sky-300",
               )}
             >
               {mentions[index]}
@@ -111,17 +119,20 @@ const renderMessageContent = (content: string, isOwnMessage: boolean) => {
         </span>
       ))}
     </p>
-  )
-}
+  );
+};
 
 const getImageAttachments = (message: RoomEventMessage) => {
-  const attachments = message.attachments?.filter(
-    (attachment): attachment is Extract<MessageAttachment, { kind: "image" }> =>
-      attachment.kind === "image",
-  ) ?? []
+  const attachments =
+    message.attachments?.filter(
+      (
+        attachment,
+      ): attachment is Extract<MessageAttachment, { kind: "image" }> =>
+        attachment.kind === "image",
+    ) ?? [];
 
   if (attachments.length > 0) {
-    return attachments
+    return attachments;
   }
 
   return message.imageUrl
@@ -132,17 +143,17 @@ const getImageAttachments = (message: RoomEventMessage) => {
           mimeType: "image/*",
         },
       ]
-    : []
-}
+    : [];
+};
 
 const getAudioAttachment = (message: RoomEventMessage) => {
   const attachment = message.attachments?.find(
     (candidate): candidate is Extract<MessageAttachment, { kind: "audio" }> =>
       candidate.kind === "audio",
-  )
+  );
 
   if (attachment) {
-    return attachment
+    return attachment;
   }
 
   return message.audioUrl
@@ -152,36 +163,39 @@ const getAudioAttachment = (message: RoomEventMessage) => {
         mimeType: "audio/*",
         transcript: message.audioTranscript,
       }
-    : null
-}
+    : null;
+};
 
 const MessageBubble = ({
   message,
   isOwnMessage,
   currentUserId,
 }: {
-  message: RoomEventMessage
-  isOwnMessage: boolean
-  currentUserId: string
+  message: RoomEventMessage;
+  isOwnMessage: boolean;
+  currentUserId: string;
 }) => {
   const senderName =
     message.sender === "ai"
       ? "Kochat AI"
-      : message.senderUser?.name || message.senderUser?.username || "Unknown user"
+      : message.senderUser?.name ||
+        message.senderUser?.username ||
+        "Unknown user";
   const senderProfileHref =
     message.sender === "human" && message.senderUser?.id
       ? message.senderUser.id === currentUserId
         ? "/profile"
         : `/users/${message.senderUser.id}`
-      : null
-  const imageAttachments = getImageAttachments(message)
-  const audioAttachment = getAudioAttachment(message)
-  const hasAttachments = imageAttachments.length > 0 || Boolean(audioAttachment)
+      : null;
+  const imageAttachments = getImageAttachments(message);
+  const audioAttachment = getAudioAttachment(message);
+  const hasAttachments =
+    imageAttachments.length > 0 || Boolean(audioAttachment);
   const aiMark = (
     <span className="relative inline-flex size-7 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] text-white shadow-sm">
       <RobotIcon size={15} weight="fill" />
     </span>
-  )
+  );
 
   return (
     <div
@@ -192,16 +206,22 @@ const MessageBubble = ({
     >
       {!isOwnMessage ? (
         senderProfileHref ? (
-          <Link href={senderProfileHref} className="mt-1 block transition-opacity hover:opacity-80">
+          <Link
+            href={senderProfileHref}
+            className="mt-1 block transition-opacity hover:opacity-80"
+          >
             <Avatar size="sm">
               <AvatarImage
-                src={message.sender === "human" ? (message.senderUser?.image ?? undefined) : undefined}
+                src={
+                  message.sender === "human"
+                    ? (message.senderUser?.image ?? undefined)
+                    : undefined
+                }
                 alt={senderName}
               />
               <AvatarFallback
                 className={cn(
-                  message.sender === "ai" &&
-                    "bg-transparent p-0 text-white",
+                  message.sender === "ai" && "bg-transparent p-0 text-white",
                 )}
               >
                 {message.sender === "ai" ? aiMark : getInitials(senderName)}
@@ -211,13 +231,16 @@ const MessageBubble = ({
         ) : (
           <Avatar size="sm" className="mt-1">
             <AvatarImage
-              src={message.sender === "human" ? (message.senderUser?.image ?? undefined) : undefined}
+              src={
+                message.sender === "human"
+                  ? (message.senderUser?.image ?? undefined)
+                  : undefined
+              }
               alt={senderName}
             />
             <AvatarFallback
               className={cn(
-                message.sender === "ai" &&
-                  "bg-transparent p-0 text-white",
+                message.sender === "ai" && "bg-transparent p-0 text-white",
               )}
             >
               {message.sender === "ai" ? aiMark : getInitials(senderName)}
@@ -257,9 +280,9 @@ const MessageBubble = ({
             </div>
           ) : null}
 
-          {message.content ? (
-            renderMessageContent(message.content, isOwnMessage)
-          ) : null}
+          {message.content
+            ? renderMessageContent(message.content, isOwnMessage)
+            : null}
 
           {imageAttachments.length > 0 ? (
             <div
@@ -329,16 +352,22 @@ const MessageBubble = ({
       </div>
 
       {isOwnMessage ? (
-        <Link href="/profile" className="mt-1 block transition-opacity hover:opacity-80">
+        <Link
+          href="/profile"
+          className="mt-1 block transition-opacity hover:opacity-80"
+        >
           <Avatar size="sm">
-            <AvatarImage src={message.senderUser?.image ?? undefined} alt={senderName} />
+            <AvatarImage
+              src={message.senderUser?.image ?? undefined}
+              alt={senderName}
+            />
             <AvatarFallback>{getInitials(senderName)}</AvatarFallback>
           </Avatar>
         </Link>
       ) : null}
     </div>
-  )
-}
+  );
+};
 
 export const RoomTimeline = ({
   room,
@@ -351,213 +380,227 @@ export const RoomTimeline = ({
   activeUsers,
   onOpenMembers,
 }: RoomTimelineProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const hasSnappedToLatestRef = useRef(false)
-  const previousLatestMessageIdRef = useRef<string | null>(null)
-  const lastMarkedReadMessageIdRef = useRef<string | null>(null)
-  const [isNearBottom, setIsNearBottom] = useState(true)
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const hasSnappedToLatestRef = useRef(false);
+  const previousLatestMessageIdRef = useRef<string | null>(null);
+  const lastMarkedReadMessageIdRef = useRef<string | null>(null);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   const messagesQuery = useRoomMessages({
     roomId: room.id,
-  })
+  });
 
-  useRoomPresence(room.id)
+  useRoomPresence(room.id);
 
   const messages = useMemo(() => {
     if (!messagesQuery.data) {
-      return []
+      return [];
     }
 
     return [...messagesQuery.data.pages]
       .reverse()
-      .flatMap((page) => [...page.items].reverse())
-  }, [messagesQuery.data])
+      .flatMap((page) => [...page.items].reverse());
+  }, [messagesQuery.data]);
 
-  const otherTypingUsers = typingUsers.filter((typingUser) => typingUser.userId !== user.id)
-  const totalActiveUsers = activeUsers.some((activeUser) => activeUser.userId === user.id)
+  const otherTypingUsers = typingUsers.filter(
+    (typingUser) => typingUser.userId !== user.id,
+  );
+  const totalActiveUsers = activeUsers.some(
+    (activeUser) => activeUser.userId === user.id,
+  )
     ? activeUsers.length
-    : activeUsers.length + 1
+    : activeUsers.length + 1;
 
   const scrollToLatest = () => {
     const viewport = containerRef.current?.querySelector<HTMLElement>(
       '[data-slot="scroll-area-viewport"]',
-    )
+    );
 
     if (!viewport) {
-      return
+      return;
     }
 
     viewport.scrollTo({
       top: viewport.scrollHeight,
       behavior: "smooth",
-    })
-  }
+    });
+  };
 
   useEffect(() => {
-    hasSnappedToLatestRef.current = false
-    previousLatestMessageIdRef.current = null
-    lastMarkedReadMessageIdRef.current = null
-    setIsNearBottom(true)
-  }, [room.id])
+    hasSnappedToLatestRef.current = false;
+    previousLatestMessageIdRef.current = null;
+    lastMarkedReadMessageIdRef.current = null;
+    setIsNearBottom(true);
+  }, [room.id]);
 
   useEffect(() => {
     const viewport = containerRef.current?.querySelector<HTMLElement>(
       '[data-slot="scroll-area-viewport"]',
-    )
+    );
 
     if (!viewport) {
-      return
+      return;
     }
 
     const updatePosition = () => {
       const distanceFromBottom =
-        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight
-      setIsNearBottom(distanceFromBottom <= 80)
-    }
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+      setIsNearBottom(distanceFromBottom <= 80);
+    };
 
-    updatePosition()
-    viewport.addEventListener("scroll", updatePosition, { passive: true })
+    updatePosition();
+    viewport.addEventListener("scroll", updatePosition, { passive: true });
 
     return () => {
-      viewport.removeEventListener("scroll", updatePosition)
-    }
-  }, [room.id, messages.length])
+      viewport.removeEventListener("scroll", updatePosition);
+    };
+  }, [room.id, messages.length]);
 
   useEffect(() => {
     if (hasSnappedToLatestRef.current || messages.length === 0) {
-      return
+      return;
     }
 
     const viewport = containerRef.current?.querySelector<HTMLElement>(
       '[data-slot="scroll-area-viewport"]',
-    )
+    );
 
     if (!viewport) {
-      return
+      return;
     }
 
-    let frameId = 0
-    let resizeObserver: ResizeObserver | null = null
+    let frameId = 0;
+    let resizeObserver: ResizeObserver | null = null;
 
     const snapToLatest = () => {
-      viewport.scrollTop = viewport.scrollHeight
-    }
+      viewport.scrollTop = viewport.scrollHeight;
+    };
 
     frameId = requestAnimationFrame(() => {
-      snapToLatest()
+      snapToLatest();
 
       // Keep the initial snap pinned while late layout changes settle
       // (for example after images/audio controls size themselves).
       resizeObserver = new ResizeObserver(() => {
         if (!hasSnappedToLatestRef.current) {
-          snapToLatest()
+          snapToLatest();
         }
-      })
+      });
 
-      resizeObserver.observe(viewport)
-      hasSnappedToLatestRef.current = true
+      resizeObserver.observe(viewport);
+      hasSnappedToLatestRef.current = true;
 
       requestAnimationFrame(() => {
-        snapToLatest()
-        resizeObserver?.disconnect()
-        resizeObserver = null
-      })
-    })
+        snapToLatest();
+        resizeObserver?.disconnect();
+        resizeObserver = null;
+      });
+    });
 
     return () => {
-      cancelAnimationFrame(frameId)
-      resizeObserver?.disconnect()
-    }
-  }, [messages])
+      cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+    };
+  }, [messages]);
 
   useEffect(() => {
     if (!focusedMessageId) {
-      return
+      return;
     }
 
-    const container = containerRef.current
+    const container = containerRef.current;
 
     if (!container) {
-      return
+      return;
     }
 
     const messageElement = container.querySelector<HTMLElement>(
       `[data-message-id="${focusedMessageId}"]`,
-    )
+    );
 
     if (!messageElement) {
-      return
+      return;
     }
 
     messageElement.scrollIntoView({
       block: "center",
       behavior: "smooth",
-    })
-  }, [focusedMessageId, messages])
+    });
+  }, [focusedMessageId, messages]);
 
   useEffect(() => {
-    const latestMessage = messages[messages.length - 1]
+    const latestMessage = messages[messages.length - 1];
 
     if (!latestMessage) {
-      return
+      return;
     }
 
-    const previousLatestMessageId = previousLatestMessageIdRef.current
-    previousLatestMessageIdRef.current = latestMessage.id
+    const previousLatestMessageId = previousLatestMessageIdRef.current;
+    previousLatestMessageIdRef.current = latestMessage.id;
 
-    if (!previousLatestMessageId || previousLatestMessageId === latestMessage.id) {
-      return
+    if (
+      !previousLatestMessageId ||
+      previousLatestMessageId === latestMessage.id
+    ) {
+      return;
     }
 
     const shouldSnapToLatest =
-      (latestMessage.sender === "human" && latestMessage.senderUserId === user.id) ||
-      latestMessage.sender === "ai"
+      (latestMessage.sender === "human" &&
+        latestMessage.senderUserId === user.id) ||
+      latestMessage.sender === "ai";
 
     if (!shouldSnapToLatest) {
-      return
+      return;
     }
 
     const viewport = containerRef.current?.querySelector<HTMLElement>(
       '[data-slot="scroll-area-viewport"]',
-    )
+    );
 
     if (!viewport) {
-      return
+      return;
     }
 
     requestAnimationFrame(() => {
-      scrollToLatest()
-    })
-  }, [messages, user.id])
+      scrollToLatest();
+    });
+  }, [messages, user.id]);
 
   useEffect(() => {
-    const latestMessage = messages[messages.length - 1]
+    const latestMessage = messages[messages.length - 1];
 
-    if (!latestMessage || !isNearBottom || latestMessage.id === lastMarkedReadMessageIdRef.current) {
-      return
+    if (
+      !latestMessage ||
+      !isNearBottom ||
+      latestMessage.id === lastMarkedReadMessageIdRef.current
+    ) {
+      return;
     }
 
     const viewport = containerRef.current?.querySelector<HTMLElement>(
       '[data-slot="scroll-area-viewport"]',
-    )
+    );
 
     if (!viewport) {
-      return
+      return;
     }
 
     if (document.hidden) {
-      return
+      return;
     }
 
-    lastMarkedReadMessageIdRef.current = latestMessage.id
+    lastMarkedReadMessageIdRef.current = latestMessage.id;
 
-    void apiClient.post(`/rooms/${room.id}/read`, {
-      messageId: latestMessage.id,
-    }).catch(() => {
-      if (lastMarkedReadMessageIdRef.current === latestMessage.id) {
-        lastMarkedReadMessageIdRef.current = null
-      }
-    })
-  }, [isNearBottom, messages, room.id])
+    void apiClient
+      .post(`/rooms/${room.id}/read`, {
+        messageId: latestMessage.id,
+      })
+      .catch(() => {
+        if (lastMarkedReadMessageIdRef.current === latestMessage.id) {
+          lastMarkedReadMessageIdRef.current = null;
+        }
+      });
+  }, [isNearBottom, messages, room.id]);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
@@ -566,7 +609,11 @@ export const RoomTimeline = ({
           variant={connectionState === "open" ? "secondary" : "outline"}
           className="h-7 rounded-full px-3"
         >
-          {connectionState === "open" ? <WifiHighIcon size={12} weight="bold" /> : <WifiSlashIcon size={12} weight="bold" />}
+          {connectionState === "open" ? (
+            <WifiHighIcon size={12} weight="bold" />
+          ) : (
+            <WifiSlashIcon size={12} weight="bold" />
+          )}
           {getConnectionLabel(connectionState)}
         </Badge>
         <button
@@ -580,7 +627,10 @@ export const RoomTimeline = ({
         {otherTypingUsers.length > 0 ? (
           <Badge variant="outline" className="h-7 rounded-full px-3">
             <CircleNotchIcon size={12} className="animate-spin" />
-            {otherTypingUsers.map((typingUser) => typingUser.userName || "Someone").join(", ")} typing
+            {otherTypingUsers
+              .map((typingUser) => typingUser.userName || "Someone")
+              .join(", ")}{" "}
+            typing
           </Badge>
         ) : null}
       </div>
@@ -600,7 +650,9 @@ export const RoomTimeline = ({
                   onClick={() => void messagesQuery.fetchNextPage()}
                   disabled={messagesQuery.isFetchingNextPage}
                 >
-                  {messagesQuery.isFetchingNextPage ? "Loading..." : "Load older messages"}
+                  {messagesQuery.isFetchingNextPage
+                    ? "Loading..."
+                    : "Load older messages"}
                 </Button>
               </div>
             ) : null}
@@ -628,7 +680,10 @@ export const RoomTimeline = ({
                 >
                   <MessageBubble
                     message={message}
-                    isOwnMessage={message.sender === "human" && message.senderUserId === user.id}
+                    isOwnMessage={
+                      message.sender === "human" &&
+                      message.senderUserId === user.id
+                    }
                     currentUserId={user.id}
                   />
                 </div>
@@ -637,10 +692,6 @@ export const RoomTimeline = ({
               <div className="flex min-h-[340px] items-center justify-center">
                 <div className="max-w-sm text-center">
                   <p className="text-lg font-semibold">No messages yet</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    This room is connected to the real backend now. The next step is the composer,
-                    so messages, uploads, and AI prompts can start flowing into this timeline.
-                  </p>
                 </div>
               </div>
             )}
@@ -683,5 +734,5 @@ export const RoomTimeline = ({
         ) : null}
       </div>
     </div>
-  )
-}
+  );
+};

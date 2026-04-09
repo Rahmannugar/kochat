@@ -144,7 +144,8 @@ const buildPromptPayload = async (
       };
     });
 
-  const cleanedTriggerContent = stripAiInvocation(triggerMessage.content);
+  const triggerPromptSource = getMessagePromptContent(triggerMessage)
+  const cleanedTriggerContent = stripAiInvocation(triggerPromptSource);
 
   if (!cleanedTriggerContent) {
     throw new Error("AI invocation message must contain a prompt");
