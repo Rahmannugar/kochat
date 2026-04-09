@@ -23,6 +23,7 @@ type TypingSignalPayload = {
 }
 
 const TYPING_TTL_MS = 3_000
+const PRESENCE_HEARTBEAT_MS = 20_000
 
 const mapPresenceStateToActiveUsers = (
   channel: RealtimeChannel,
@@ -52,6 +53,7 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
   const pendingMessagesRef = useRef<PaginatedMessages["items"]>([])
   const typingTimeoutsRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   const typingUsersRef = useRef(new Map<string, TypingUser>())
+  const channelRef = useRef<RealtimeChannel | null>(null)
   const [connectionState, setConnectionState] = useState<
     "idle" | "connecting" | "open" | "closed" | "error"
   >("idle")
@@ -82,6 +84,8 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
 
     let isMounted = true
     let channel: RealtimeChannel | null = null
+    let heartbeatId: number | null = null
+    let unsubscribeVisibility: (() => void) | null = null
 
     setConnectionState("connecting")
 
@@ -103,6 +107,29 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
             },
           },
         })
+        channelRef.current = channel
+
+        const trackPresence = async (active: boolean) => {
+          if (!channel) {
+            return
+          }
+
+          try {
+            if (active) {
+              await channel.track({
+                userId: user.id,
+                userName: user.name ?? user.username ?? null,
+                image: user.image ?? null,
+                lastSeenAt: new Date().toISOString(),
+              })
+              return
+            }
+
+            await channel.untrack()
+          } catch {
+            // Presence is best-effort.
+          }
+        }
 
         channel.on("broadcast", { event: "message.created" }, ({ payload }) => {
           const roomEvent = payload as MessageCreatedEvent
@@ -206,6 +233,25 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
           if (status === "SUBSCRIBED") {
             setActiveUsers(channel ? mapPresenceStateToActiveUsers(channel) : [])
             setConnectionState("open")
+            void trackPresence(!document.hidden)
+
+            if (!heartbeatId) {
+              heartbeatId = window.setInterval(() => {
+                void trackPresence(!document.hidden)
+              }, PRESENCE_HEARTBEAT_MS)
+            }
+
+            if (!unsubscribeVisibility) {
+              const handleVisibilityChange = () => {
+                void trackPresence(!document.hidden)
+              }
+
+              document.addEventListener("visibilitychange", handleVisibilityChange)
+              unsubscribeVisibility = () => {
+                document.removeEventListener("visibilitychange", handleVisibilityChange)
+              }
+            }
+
             void queryClient.invalidateQueries({
               queryKey: roomMessagesQueryKey(roomId),
             })
@@ -236,13 +282,69 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
       setActiveUsers([])
       setLatestEvent(null)
       pendingMessagesRef.current = []
+      channelRef.current = null
+
+      if (heartbeatId) {
+        clearInterval(heartbeatId)
+      }
+
+      if (unsubscribeVisibility) {
+        unsubscribeVisibility()
+      }
 
       if (channel) {
+        void channel.untrack().catch(() => {})
         const supabase = getSupabaseBrowser()
         void supabase.removeChannel(channel)
       }
     }
-  }, [queryClient, roomId, user.id])
+  }, [queryClient, roomId, user.id, user.image, user.name, user.username])
+
+  const notifyTyping = useMemo(
+    () => () => {
+      const channel = channelRef.current
+
+      if (!channel) {
+        return
+      }
+
+      void channel.send({
+        type: "broadcast",
+        event: "typing.updated",
+        payload: {
+          userId: user.id,
+          userName: user.name ?? user.username ?? null,
+          isTyping: true,
+        },
+      })
+
+      const existingTimeout = typingTimeoutsRef.current.get(user.id)
+      if (existingTimeout) {
+        clearTimeout(existingTimeout)
+      }
+
+      const timeoutId = setTimeout(() => {
+        const nextChannel = channelRef.current
+
+        if (!nextChannel) {
+          return
+        }
+
+        void nextChannel.send({
+          type: "broadcast",
+          event: "typing.updated",
+          payload: {
+            userId: user.id,
+            userName: user.name ?? user.username ?? null,
+            isTyping: false,
+          },
+        })
+      }, 300)
+
+      typingTimeoutsRef.current.set(user.id, timeoutId)
+    },
+    [user.id, user.name, user.username],
+  )
 
   return useMemo(
     () => ({
@@ -250,7 +352,8 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
       typingUsers,
       activeUsers,
       latestEvent,
+      notifyTyping,
     }),
-    [activeUsers, connectionState, latestEvent, typingUsers],
+    [activeUsers, connectionState, latestEvent, notifyTyping, typingUsers],
   )
 }

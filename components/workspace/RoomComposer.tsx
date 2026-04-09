@@ -21,9 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
-import { useRoomTyping } from "@/lib/rooms/useRoomTyping"
 import { useRoomComposer } from "@/lib/rooms/useRoomComposer"
-import type { AuthUser } from "@/lib/auth/auth.types"
 import {
   AI_USAGE_MAX_REQUESTS_PER_WINDOW,
   AI_USAGE_WINDOW_MS,
@@ -37,8 +35,8 @@ import {
 
 type RoomComposerProps = {
   roomId: string
-  user: AuthUser
   onAiTrigger: (messageId: string) => Promise<unknown>
+  onTypingActivity?: () => void
 }
 
 type PendingImage = {
@@ -73,7 +71,11 @@ const formatDuration = (valueMs: number) => {
   return `${minutes}:${String(seconds).padStart(2, "0")}`
 }
 
-export const RoomComposer = ({ roomId, user, onAiTrigger }: RoomComposerProps) => {
+export const RoomComposer = ({
+  roomId,
+  onAiTrigger,
+  onTypingActivity,
+}: RoomComposerProps) => {
   const { resolvedTheme } = useTheme()
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -101,10 +103,6 @@ export const RoomComposer = ({ roomId, user, onAiTrigger }: RoomComposerProps) =
   } = useRoomComposer({
     roomId,
     onAiTrigger,
-  })
-  const { notifyTyping } = useRoomTyping({
-    roomId,
-    user,
   })
 
   const isBusy = isSendingMessage || isUploadingImage || isUploadingVoice
@@ -574,7 +572,7 @@ export const RoomComposer = ({ roomId, user, onAiTrigger }: RoomComposerProps) =
             className="min-h-24 border-0 bg-transparent px-2 py-2 text-sm leading-6 shadow-none focus-visible:ring-0"
             onChange={(event) => {
               setMessage(event.target.value)
-              notifyTyping()
+              onTypingActivity?.()
             }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {

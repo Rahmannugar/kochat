@@ -56,7 +56,11 @@ export const RoomPanel = ({ room, user }: RoomPanelProps) => {
             activeUsers={roomEvents.activeUsers}
             onOpenMembers={() => setActiveView("members")}
           />
-          <RoomComposer roomId={room.id} user={user} onAiTrigger={aiStream.startStream} />
+          <RoomComposer
+            roomId={room.id}
+            onAiTrigger={aiStream.startStream}
+            onTypingActivity={roomEvents.notifyTyping}
+          />
         </>
       ) : (
         <RoomMembersPanel

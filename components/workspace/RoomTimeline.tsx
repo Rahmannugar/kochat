@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomMessages } from "@/lib/rooms/useRoomMessages";
-import { useRoomPresence } from "@/lib/rooms/useRoomPresence";
 import { apiClient } from "@/lib/utils/client";
 import type {
   MessageAttachment,
@@ -388,8 +387,6 @@ export const RoomTimeline = ({
   const messagesQuery = useRoomMessages({
     roomId: room.id,
   });
-
-  useRoomPresence(room.id, user);
 
   const messages = useMemo(() => {
     if (!messagesQuery.data) {
