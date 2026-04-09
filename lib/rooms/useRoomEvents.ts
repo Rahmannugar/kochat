@@ -123,8 +123,13 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
             }
 
             await channel.untrack()
-          } catch {
-            // Presence is best-effort.
+          } catch (error) {
+            console.error("[realtime] presence update failed", {
+              roomId,
+              userId: user.id,
+              active,
+              error,
+            })
           }
         }
 
@@ -223,6 +228,13 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
         })
 
         channel.subscribe((status) => {
+          console.info("[realtime] channel status", {
+            roomId,
+            userId: user.id,
+            status,
+            topic: getRoomTopic(roomId),
+          })
+
           if (!isMounted) {
             return
           }
@@ -264,11 +276,16 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
             setConnectionState("error")
           }
         })
-      } catch {
+      } catch (error) {
         if (!isMounted) {
           return
         }
 
+        console.error("[realtime] failed to initialize room channel", {
+          roomId,
+          userId: user.id,
+          error,
+        })
         setConnectionState("error")
       }
     })()

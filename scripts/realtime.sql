@@ -1,5 +1,11 @@
 alter table realtime.messages enable row level security;
 
+drop policy if exists "room members can receive private room events"
+on realtime.messages;
+
+drop policy if exists "room members can publish private room events"
+on realtime.messages;
+
 create policy "room members can receive private room events"
 on realtime.messages
 for select

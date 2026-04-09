@@ -12,6 +12,11 @@ const fetchRealtimeToken = async () => {
   })
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "")
+    console.error("[realtime] failed to fetch token", {
+      status: response.status,
+      body: errorBody,
+    })
     throw new Error("Unable to authorize realtime channels")
   }
 
@@ -24,6 +29,7 @@ const fetchRealtimeToken = async () => {
   const token = payload.data?.token
 
   if (!token) {
+    console.error("[realtime] token response missing token", payload)
     throw new Error("Realtime token was not returned")
   }
 
