@@ -147,9 +147,6 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/image`, formData)
 
-        if (!quiet) {
-          toast.success("Image sent.")
-        }
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send image.", error)
@@ -199,9 +196,6 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/voice`, formData)
 
-        if (!options?.quiet) {
-          toast.success("Voice message sent.")
-        }
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send voice message.", error)
@@ -303,10 +297,6 @@ export const useRoomComposer = ({
           void onAiTrigger(response.data.message.id).catch(() => {
             toast.error("AI couldn’t respond right now.")
           })
-        }
-
-        if (!quiet) {
-          toast.success("Message sent.")
         }
 
         return response.data.message

@@ -430,12 +430,6 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
         audioLabel: pendingAudio?.label ?? null,
         quiet: true,
       })
-
-      toast.success(
-        pendingMediaSummary
-          ? `Sent ${pendingMediaSummary}${content ? " and your message." : "."}`
-          : "Message sent.",
-      )
       resetComposer()
     } catch {
       // useRoomComposer already raises the relevant toast

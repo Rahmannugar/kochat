@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
+  ArrowDownIcon,
   CircleNotchIcon,
   RobotIcon,
   UsersThreeIcon,
@@ -376,6 +377,21 @@ export const RoomTimeline = ({
     ? activeUsers.length
     : activeUsers.length + 1
 
+  const scrollToLatest = () => {
+    const viewport = containerRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    )
+
+    if (!viewport) {
+      return
+    }
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior: "smooth",
+    })
+  }
+
   useEffect(() => {
     hasSnappedToLatestRef.current = false
     previousLatestMessageIdRef.current = null
@@ -419,10 +435,38 @@ export const RoomTimeline = ({
       return
     }
 
-    requestAnimationFrame(() => {
+    let frameId = 0
+    let resizeObserver: ResizeObserver | null = null
+
+    const snapToLatest = () => {
       viewport.scrollTop = viewport.scrollHeight
+    }
+
+    frameId = requestAnimationFrame(() => {
+      snapToLatest()
+
+      // Keep the initial snap pinned while late layout changes settle
+      // (for example after images/audio controls size themselves).
+      resizeObserver = new ResizeObserver(() => {
+        if (!hasSnappedToLatestRef.current) {
+          snapToLatest()
+        }
+      })
+
+      resizeObserver.observe(viewport)
       hasSnappedToLatestRef.current = true
+
+      requestAnimationFrame(() => {
+        snapToLatest()
+        resizeObserver?.disconnect()
+        resizeObserver = null
+      })
     })
+
+    return () => {
+      cancelAnimationFrame(frameId)
+      resizeObserver?.disconnect()
+    }
   }, [messages])
 
   useEffect(() => {
@@ -481,10 +525,7 @@ export const RoomTimeline = ({
     }
 
     requestAnimationFrame(() => {
-      viewport.scrollTo({
-        top: viewport.scrollHeight,
-        behavior: "smooth",
-      })
+      scrollToLatest()
     })
   }, [messages, user.id])
 
@@ -628,6 +669,18 @@ export const RoomTimeline = ({
             ) : null}
           </div>
         </ScrollArea>
+
+        {!isNearBottom && messages.length > 0 ? (
+          <Button
+            type="button"
+            size="sm"
+            className="absolute bottom-4 right-4 z-10 h-10 rounded-full px-4 shadow-lg"
+            onClick={scrollToLatest}
+          >
+            <ArrowDownIcon size={14} weight="bold" />
+            Latest
+          </Button>
+        ) : null}
       </div>
     </div>
   )
