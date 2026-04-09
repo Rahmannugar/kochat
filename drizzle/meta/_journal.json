@@ -36,6 +36,13 @@
       "when": 1775679643139,
       "tag": "0004_add-room-member-read-state",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775682449450,
+      "tag": "0005_add-push-subscriptions",
+      "breakpoints": true
     }
   ]
 }

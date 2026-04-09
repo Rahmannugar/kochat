@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import {
   GearSixIcon,
   HashIcon,
   LockSimpleIcon,
+  MagnifyingGlassIcon,
   PlusIcon,
   UserCirclePlusIcon,
   UsersThreeIcon,
@@ -20,7 +21,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { useRooms } from "@/lib/rooms/useRooms";
+import { useRoomSearch } from "@/lib/rooms/useRoomSearch";
 import type { AuthUser } from "@/lib/auth/auth.types";
 import { cn } from "@/lib/utils";
 
@@ -43,14 +46,6 @@ const getInitials = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
-const getRoomDisplayName = (roomName: string, roomType: "dm" | "group") => {
-  if (roomType === "dm" && roomName.includes(":")) {
-    return "Direct conversation"
-  }
-
-  return roomName
-}
-
 export const RoomListPanel = ({
   user,
   selectedRoomId = null,
@@ -59,6 +54,8 @@ export const RoomListPanel = ({
   activeDashboardTab = "rooms",
   onDashboardTabChange,
 }: RoomListPanelProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery.trim());
   const {
     data,
     isLoading,
@@ -66,11 +63,25 @@ export const RoomListPanel = ({
     hasNextPage,
     fetchNextPage,
   } = useRooms();
-  const pages = data?.pages ?? [];
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isFetchingNextPage: isFetchingSearchNextPage,
+    hasNextPage: hasSearchNextPage,
+    fetchNextPage: fetchSearchNextPage,
+  } = useRoomSearch(deferredSearchQuery);
+  const isSearchActive = deferredSearchQuery.length > 0;
+  const pages = (isSearchActive ? searchData : data)?.pages ?? [];
+  const isLoadingCurrent = isSearchActive ? isSearchLoading : isLoading;
+  const isFetchingNextPageCurrent = isSearchActive
+    ? isFetchingSearchNextPage
+    : isFetchingNextPage;
+  const hasNextPageCurrent = isSearchActive ? hasSearchNextPage : hasNextPage;
+  const fetchNextPageCurrent = isSearchActive ? fetchSearchNextPage : fetchNextPage;
   const [pageIndex, setPageIndex] = useState(0);
   const memberships = pages[pageIndex]?.items ?? [];
   const canGoBack = pageIndex > 0;
-  const canGoNext = pageIndex < pages.length - 1 || Boolean(hasNextPage);
+  const canGoNext = pageIndex < pages.length - 1 || Boolean(hasNextPageCurrent);
 
   useEffect(() => {
     if (pageIndex > 0 && pageIndex >= pages.length) {
@@ -78,17 +89,21 @@ export const RoomListPanel = ({
     }
   }, [pageIndex, pages.length]);
 
+  useEffect(() => {
+    setPageIndex(0);
+  }, [deferredSearchQuery]);
+
   const handleNextPage = async () => {
     if (pageIndex < pages.length - 1) {
       setPageIndex((current) => current + 1);
       return;
     }
 
-    if (!hasNextPage || isFetchingNextPage) {
+    if (!hasNextPageCurrent || isFetchingNextPageCurrent) {
       return;
     }
 
-    const result = await fetchNextPage();
+    const result = await fetchNextPageCurrent();
 
     if (result.data?.pages.length && pageIndex < result.data.pages.length - 1) {
       setPageIndex((current) => current + 1);
@@ -178,16 +193,32 @@ export const RoomListPanel = ({
 
       {hideRoomsList ? null : (
         <CardContent className="space-y-4 pt-0">
+          <div className="relative">
+            <MagnifyingGlassIcon
+              size={16}
+              weight="bold"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search conversations"
+              className="h-11 rounded-2xl border-black/8 bg-white/78 pl-10 pr-4 dark:border-white/10 dark:bg-white/5"
+            />
+          </div>
+
           <div className="flex min-w-0 items-center justify-between gap-3">
-            <p className="truncate text-sm font-medium">Your conversations</p>
+            <p className="truncate text-sm font-medium">
+              {isSearchActive ? "Search results" : "Your conversations"}
+            </p>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {isLoading ? "Loading..." : `${memberships.length} shown`}
+              {isLoadingCurrent ? "Loading..." : `${memberships.length} shown`}
             </span>
           </div>
 
           <ScrollArea className="h-[520px] w-full">
             <div className="min-w-0 space-y-2 pr-3">
-            {isLoading ? (
+            {isLoadingCurrent ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={index}
@@ -198,7 +229,6 @@ export const RoomListPanel = ({
               memberships.map((membership) => {
                 const room = membership.room;
                 const isSelected = room.id === selectedRoomId;
-                const roomDisplayName = getRoomDisplayName(room.name, room.type)
 
                 return (
                   <Link
@@ -227,13 +257,13 @@ export const RoomListPanel = ({
                               className="text-primary"
                             />
                           )}
-                          <p className="truncate font-medium">{roomDisplayName}</p>
+                          <p className="truncate font-medium">{room.displayName}</p>
                         </div>
                         <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
                           {room.description ||
                             (room.type === "group"
                               ? "Private group room joined by secure code."
-                              : "Direct conversation between two members.")}
+                              : room.subtitle ?? "Private direct conversation.")}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -245,10 +275,13 @@ export const RoomListPanel = ({
               })
             ) : (
               <div className="rounded-[1.5rem] border border-dashed border-border/70 bg-muted/30 p-5 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">No rooms yet</p>
+                <p className="font-medium text-foreground">
+                  {isSearchActive ? "No conversations found" : "No rooms yet"}
+                </p>
                 <p className="mt-2">
-                  Start with a direct message or create your first group room.
-                  This workspace will update in realtime as conversations begin.
+                  {isSearchActive
+                    ? "Try a username, name, email, group name, or join code."
+                    : "Start with a direct message or create your first group room. This workspace will update in realtime as conversations begin."}
                 </p>
               </div>
             )}
@@ -257,7 +290,7 @@ export const RoomListPanel = ({
               <CursorPagination
                 canGoBack={canGoBack}
                 canGoNext={canGoNext}
-                isBusy={isFetchingNextPage}
+                isBusy={isFetchingNextPageCurrent}
                 backLabel="Previous"
                 nextLabel="Next"
                 onBack={() => setPageIndex((current) => Math.max(0, current - 1))}

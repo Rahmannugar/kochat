@@ -1,6 +1,6 @@
-import { and, desc, eq, isNull, lt, or } from "drizzle-orm"
+import { and, asc, desc, eq, ilike, inArray, isNull, lt, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { roomMembers, rooms } from "@/lib/db/schema"
+import { roomMembers, rooms, user } from "@/lib/db/schema"
 
 type CreateRoomInput = {
   name: string
@@ -123,6 +123,106 @@ export const roomRepository = {
     })
   },
 
+  searchForUser: async ({
+    userId,
+    query,
+    limit = 10,
+    cursorId,
+  }: {
+    userId: string
+    query: string
+    limit?: number
+    cursorId?: string
+  }) => {
+    const cursorMembership = cursorId
+      ? await db.query.roomMembers.findFirst({
+          where: and(eq(roomMembers.id, cursorId), eq(roomMembers.userId, userId)),
+        })
+      : null
+
+    if (cursorId && !cursorMembership) {
+      throw new Error("Invalid room search cursor")
+    }
+
+    const searchTerm = `%${query}%`
+    const searchPredicate = or(
+      and(
+        eq(rooms.type, "group"),
+        or(
+          ilike(rooms.name, searchTerm),
+          ilike(sql`coalesce(${rooms.code}, '')`, searchTerm),
+        ),
+      ),
+      and(
+        eq(rooms.type, "dm"),
+        sql<boolean>`exists (
+          select 1
+          from ${roomMembers} as other_members
+          inner join ${user} as other_user
+            on other_members.user_id = other_user.id
+          where other_members.room_id = ${rooms.id}
+            and other_members.archived_at is null
+            and other_members.user_id <> ${userId}
+            and (
+              lower(coalesce(other_user.username, '')) like lower(${searchTerm})
+              or lower(other_user.name) like lower(${searchTerm})
+              or lower(other_user.email) like lower(${searchTerm})
+            )
+        )`,
+      ),
+    )
+
+    const cursorPredicate = cursorMembership
+      ? or(
+          lt(roomMembers.joinedAt, cursorMembership.joinedAt),
+          and(
+            eq(roomMembers.joinedAt, cursorMembership.joinedAt),
+            lt(roomMembers.id, cursorMembership.id),
+          ),
+        )
+      : undefined
+
+    const baseWhere = cursorPredicate
+      ? and(
+          eq(roomMembers.userId, userId),
+          isNull(roomMembers.archivedAt),
+          searchPredicate,
+          cursorPredicate,
+        )
+      : and(eq(roomMembers.userId, userId), isNull(roomMembers.archivedAt), searchPredicate)
+
+    const rows = await db
+      .select({
+        id: roomMembers.id,
+      })
+      .from(roomMembers)
+      .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
+      .where(baseWhere)
+      .orderBy(desc(roomMembers.joinedAt), desc(roomMembers.id))
+      .limit(limit + 1)
+
+    const membershipIds = rows.map((row) => row.id)
+
+    if (membershipIds.length === 0) {
+      return []
+    }
+
+    const memberships = await db.query.roomMembers.findMany({
+      where: inArray(roomMembers.id, membershipIds),
+      with: {
+        room: true,
+      },
+    })
+
+    const membershipMap = new Map(
+      memberships.map((membership) => [membership.id, membership]),
+    )
+
+    return membershipIds
+      .map((membershipId) => membershipMap.get(membershipId))
+      .filter((membership): membership is NonNullable<typeof membership> => Boolean(membership))
+  },
+
   findMembership: async (roomId: string, userId: string) => {
     return db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
@@ -181,6 +281,7 @@ export const roomRepository = {
       with: {
         user: true,
       },
+      orderBy: [asc(roomMembers.joinedAt), asc(roomMembers.id)],
     })
   },
 

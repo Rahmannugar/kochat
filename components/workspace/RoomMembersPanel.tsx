@@ -29,14 +29,6 @@ const getInitials = (value: string | null | undefined) =>
 const getProfileHref = (member: RoomMemberListItem, currentUserId: string) =>
   member.user.id === currentUserId ? "/profile" : `/users/${member.user.id}`
 
-const getRoomDisplayName = (roomName: string, roomType: "dm" | "group") => {
-  if (roomType === "dm" && roomName.includes(":")) {
-    return "Direct conversation"
-  }
-
-  return roomName
-}
-
 export const RoomMembersPanel = ({
   room,
   activeUsers,
@@ -61,8 +53,6 @@ export const RoomMembersPanel = ({
   )
   const canGoBack = pageIndex > 0
   const canGoNext = pageIndex < pages.length - 1 || Boolean(hasNextPage)
-  const roomDisplayName = getRoomDisplayName(room.name, room.type)
-
   useEffect(() => {
     if (pageIndex > 0 && pageIndex >= pages.length) {
       setPageIndex(Math.max(0, pages.length - 1))
@@ -94,10 +84,10 @@ export const RoomMembersPanel = ({
             <UsersThreeIcon size={18} weight="bold" className="text-primary" />
             Room members
           </p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
+            <p className="mt-1 truncate text-xs text-muted-foreground">
             {room.type === "dm"
               ? "Browse everyone in this direct conversation."
-              : `Browse who is inside ${roomDisplayName}.`}
+              : `Browse who is inside ${room.displayName}.`}
           </p>
         </div>
         <Button

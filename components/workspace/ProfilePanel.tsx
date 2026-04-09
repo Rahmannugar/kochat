@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { AuthUser } from "@/lib/auth/auth.types"
+import { usePushNotifications } from "@/lib/push/usePushNotifications"
 import {
   AVATAR_ALLOWED_MIME_TYPES,
   AVATAR_MAX_SIZE_BYTES,
@@ -47,6 +48,18 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const {
+    hasHydrated: hasPushHydrated,
+    isSupported: isPushSupported,
+    isConfigured: isPushConfigured,
+    permission: pushPermission,
+    isSubscribed: isPushSubscribed,
+    isInitializing: isPushInitializing,
+    isPending: isPushPending,
+    error: pushError,
+    enableNotifications,
+    disableNotifications,
+  } = usePushNotifications()
 
   useEffect(() => {
     return () => {
@@ -111,6 +124,27 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
       setIsSaving(false)
     }
   }
+
+  const handleNotificationToggle = async () => {
+    if (isPushSubscribed) {
+      await disableNotifications()
+      return
+    }
+
+    await enableNotifications()
+  }
+
+  const pushStatusMessage = !hasPushHydrated || isPushInitializing
+    ? "Checking browser notification support..."
+    : !isPushSupported
+      ? "This browser does not support web push notifications."
+      : !isPushConfigured
+        ? "Push notifications are not configured yet."
+        : isPushSubscribed
+          ? "Notifications are currently enabled on this device."
+          : pushPermission === "denied"
+            ? "Notifications are blocked in your browser settings. Enable them for this site and refresh."
+            : "Notifications are currently off on this device."
 
   const handleAvatarSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -301,6 +335,44 @@ export const ProfilePanel = ({ user, onUserChange }: ProfilePanelProps) => {
             <p className="mt-2 break-all text-sm text-muted-foreground">
               {user.email}
             </p>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-border/60 bg-background/75 p-5">
+            <p className="text-sm font-medium text-foreground">Push notifications</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Get notified about new messages when you are away from the room.
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {pushStatusMessage}
+            </p>
+
+            {pushError ? (
+              <p className="mt-3 text-sm text-destructive">{pushError}</p>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={isPushSubscribed ? "outline" : "default"}
+                className="rounded-full"
+                disabled={
+                  isPushInitializing ||
+                  !hasPushHydrated ||
+                  !isPushSupported ||
+                  !isPushConfigured ||
+                  isPushPending
+                }
+                onClick={() => void handleNotificationToggle()}
+              >
+                {isPushPending
+                  ? "Saving..."
+                  : isPushSubscribed
+                    ? "Disable notifications"
+                    : pushPermission === "denied"
+                      ? "Notifications blocked"
+                    : "Enable notifications"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { messageRepository } from "@/lib/messages/message.repository";
+import { pushService } from "@/lib/push/push.service";
 import { roomRepository } from "@/lib/rooms/room.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
 import type {
@@ -251,6 +252,7 @@ export const messageService = {
 
     const message = await messageRepository.findDetailedById(createdMessage.id);
     const memberships = await roomRepository.listActiveMembershipsByRoomId(roomId)
+    const room = await roomRepository.findById(roomId)
 
     if (!message) {
       throw new Error("Message could not be loaded after creation");
@@ -265,6 +267,23 @@ export const messageService = {
         message: enrichedMessage,
       },
     });
+
+    await pushService.notifyRoomMembersAboutMessage({
+      roomId,
+      senderUserId,
+      senderName:
+        enrichedMessage.senderUser?.name ??
+        enrichedMessage.senderUser?.username ??
+        "New message",
+      roomName: room?.name ?? "Kochat",
+      preview:
+        enrichedMessage.content.trim() ||
+        (enrichedMessage.messageType === "image"
+          ? "Sent an image"
+          : enrichedMessage.messageType === "voice"
+            ? "Sent a voice note"
+            : "Sent a message"),
+    })
 
     return enrichedMessage;
   },
