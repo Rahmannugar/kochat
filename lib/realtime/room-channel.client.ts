@@ -10,45 +10,8 @@ type RoomChannelEntry = {
 }
 
 const roomChannels = new Map<string, RoomChannelEntry>()
-let realtimeTokenPromise: Promise<string> | null = null
 
 export const getRoomTopic = (roomId: string) => `room:${roomId}`
-
-export const fetchRealtimeToken = async () => {
-  if (realtimeTokenPromise) {
-    return realtimeTokenPromise
-  }
-
-  realtimeTokenPromise = fetch("/api/realtime/token", {
-    method: "GET",
-    credentials: "same-origin",
-    cache: "no-store",
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error("Unable to authorize realtime channels")
-      }
-
-      const payload = (await response.json()) as {
-        data?: {
-          token?: string
-        }
-      }
-
-      const token = payload.data?.token
-
-      if (!token) {
-        throw new Error("Realtime token was not returned")
-      }
-
-      return token
-    })
-    .finally(() => {
-      realtimeTokenPromise = null
-    })
-
-  return realtimeTokenPromise
-}
 
 export const acquireRoomChannel = async (roomId: string, userId: string) => {
   const existingEntry = roomChannels.get(roomId)
@@ -59,10 +22,6 @@ export const acquireRoomChannel = async (roomId: string, userId: string) => {
   }
 
   const supabase = getSupabaseBrowser()
-  const token = await fetchRealtimeToken()
-
-  await supabase.realtime.setAuth(token)
-
   const channel = supabase.channel(getRoomTopic(roomId), {
     config: {
       private: true,

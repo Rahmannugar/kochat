@@ -42,6 +42,7 @@ export const GET = async () => {
   const expiresAt = nowInSeconds + 60 * 60
   const token = signJwt(
     {
+      iss: `${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1`,
       aud: "authenticated",
       exp: expiresAt,
       iat: nowInSeconds,

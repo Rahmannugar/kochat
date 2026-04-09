@@ -13,7 +13,7 @@ import type {
 import type { PaginatedMessages } from "@/lib/messages/message.client.types"
 import { roomMessagesQueryKey } from "@/lib/rooms/useRoomMessages"
 import { getSupabaseBrowser } from "@/lib/supabase/browser"
-import { fetchRealtimeToken, getRoomTopic } from "@/lib/realtime/room-channel.client"
+import { getRoomTopic } from "@/lib/realtime/room-channel.client"
 import type { AuthUser } from "@/lib/auth/auth.types"
 
 type TypingSignalPayload = {
@@ -92,9 +92,6 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
     void (async () => {
       try {
         const supabase = getSupabaseBrowser()
-        const token = await fetchRealtimeToken()
-        await supabase.realtime.setAuth(token)
-
         channel = supabase.channel(getRoomTopic(roomId), {
           config: {
             private: true,
