@@ -41,6 +41,15 @@ export const POST = async (request: Request, context: RouteContext) => {
       content: content || "Image",
       messageType: "image",
       imageUrl: upload.publicUrl,
+      attachments: [
+        {
+          kind: "image",
+          url: upload.publicUrl,
+          mimeType: upload.mimeType,
+          storagePath: upload.path,
+          size: upload.size,
+        },
+      ],
       metadata: {
         storagePath: upload.path,
         mimeType: upload.mimeType,

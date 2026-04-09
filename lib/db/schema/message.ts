@@ -28,6 +28,7 @@ export const messages = pgTable(
     imageUrl: text("image_url"),
     audioUrl: text("audio_url"),
     audioTranscript: text("audio_transcript"),
+    attachments: jsonb("attachments"),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),

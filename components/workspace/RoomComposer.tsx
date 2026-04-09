@@ -95,9 +95,7 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
     isSendingMessage,
     isUploadingImage,
     isUploadingVoice,
-    sendTextMessage,
-    sendImageMessage,
-    sendVoiceMessage,
+    sendComposedMessage,
   } = useRoomComposer({
     roomId,
     onAiTrigger,
@@ -425,35 +423,13 @@ export const RoomComposer = ({ roomId, onAiTrigger }: RoomComposerProps) => {
     }
 
     try {
-      if (pendingAudio) {
-        await sendVoiceMessage(pendingAudio.file, { quiet: true })
-      }
-
-      if (pendingImages.length === 1 && !pendingAudio) {
-        const [image] = pendingImages
-        const imageMessage = await sendImageMessage({
-          file: image.file,
-          content,
-          quiet: true,
-        })
-
-        if (AI_INVOCATION_PATTERN.test(content)) {
-          void onAiTrigger(imageMessage.id).catch(() => {
-            toast.error("AI couldn’t respond right now.")
-          })
-        }
-      } else {
-        for (const image of pendingImages) {
-          await sendImageMessage({
-            file: image.file,
-            quiet: true,
-          })
-        }
-
-        if (content) {
-          await sendTextMessage(content, { quiet: true })
-        }
-      }
+      await sendComposedMessage({
+        content,
+        imageFiles: pendingImages.map((image) => image.file),
+        audioFile: pendingAudio?.file ?? null,
+        audioLabel: pendingAudio?.label ?? null,
+        quiet: true,
+      })
 
       toast.success(
         pendingMediaSummary

@@ -1,3 +1,21 @@
+export type MessageAttachment =
+  | {
+      kind: "image"
+      url: string
+      mimeType: string
+      storagePath?: string | null
+      size?: number | null
+    }
+  | {
+      kind: "audio"
+      url: string
+      mimeType: string
+      transcript?: string | null
+      storagePath?: string | null
+      size?: number | null
+      label?: string | null
+    }
+
 export type RoomEventMessage = {
   id: string
   roomId: string
@@ -8,6 +26,7 @@ export type RoomEventMessage = {
   imageUrl: string | null
   audioUrl: string | null
   audioTranscript: string | null
+  attachments: MessageAttachment[] | null
   metadata: Record<string, unknown> | null
   createdAt: string | Date
   updatedAt: string | Date

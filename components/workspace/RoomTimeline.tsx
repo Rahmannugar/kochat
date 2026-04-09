@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRoomMessages } from "@/lib/rooms/useRoomMessages"
 import { useRoomPresence } from "@/lib/rooms/useRoomPresence"
 import { apiClient } from "@/lib/utils/client"
-import type { RoomEventMessage } from "@/lib/messages/message.client.types"
+import type { MessageAttachment, RoomEventMessage } from "@/lib/messages/message.client.types"
 import type { RoomListItem } from "@/lib/rooms/room.client.types"
 import type { AuthUser } from "@/lib/auth/auth.types"
 import type { ActiveUser, TypingUser } from "@/lib/realtime/realtime-event.types"
@@ -113,6 +113,47 @@ const renderMessageContent = (content: string, isOwnMessage: boolean) => {
   )
 }
 
+const getImageAttachments = (message: RoomEventMessage) => {
+  const attachments = message.attachments?.filter(
+    (attachment): attachment is Extract<MessageAttachment, { kind: "image" }> =>
+      attachment.kind === "image",
+  ) ?? []
+
+  if (attachments.length > 0) {
+    return attachments
+  }
+
+  return message.imageUrl
+    ? [
+        {
+          kind: "image" as const,
+          url: message.imageUrl,
+          mimeType: "image/*",
+        },
+      ]
+    : []
+}
+
+const getAudioAttachment = (message: RoomEventMessage) => {
+  const attachment = message.attachments?.find(
+    (candidate): candidate is Extract<MessageAttachment, { kind: "audio" }> =>
+      candidate.kind === "audio",
+  )
+
+  if (attachment) {
+    return attachment
+  }
+
+  return message.audioUrl
+    ? {
+        kind: "audio" as const,
+        url: message.audioUrl,
+        mimeType: "audio/*",
+        transcript: message.audioTranscript,
+      }
+    : null
+}
+
 const MessageBubble = ({
   message,
   isOwnMessage,
@@ -132,6 +173,9 @@ const MessageBubble = ({
         ? "/profile"
         : `/users/${message.senderUser.id}`
       : null
+  const imageAttachments = getImageAttachments(message)
+  const audioAttachment = getAudioAttachment(message)
+  const hasAttachments = imageAttachments.length > 0 || Boolean(audioAttachment)
   const aiMark = (
     <span className="relative inline-flex size-7 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,rgba(12,92,255,0.95),rgba(20,184,166,0.95))] text-white shadow-sm">
       <RobotIcon size={15} weight="fill" />
@@ -216,26 +260,38 @@ const MessageBubble = ({
             renderMessageContent(message.content, isOwnMessage)
           ) : null}
 
-          {message.imageUrl ? (
-            <div className="mt-3 overflow-hidden rounded-[1rem] border border-black/5 bg-black/5 dark:border-white/10 dark:bg-white/5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={message.imageUrl}
-                alt={message.content || "Shared image"}
-                className="max-h-80 w-full object-cover"
-              />
+          {imageAttachments.length > 0 ? (
+            <div
+              className={cn(
+                "mt-3 grid gap-3",
+                imageAttachments.length === 1 ? "grid-cols-1" : "grid-cols-2",
+              )}
+            >
+              {imageAttachments.map((attachment, index) => (
+                <div
+                  key={`${attachment.url}-${index}`}
+                  className="overflow-hidden rounded-[1rem] border border-black/5 bg-black/5 dark:border-white/10 dark:bg-white/5"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={attachment.url}
+                    alt={message.content || `Shared image ${index + 1}`}
+                    className="max-h-80 w-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
           ) : null}
 
-          {message.audioUrl ? (
+          {audioAttachment ? (
             <div className="mt-3 rounded-[1rem] border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
-              <audio controls className="w-full" src={message.audioUrl}>
+              <audio controls className="w-full" src={audioAttachment.url}>
                 Your browser does not support audio playback.
               </audio>
             </div>
           ) : null}
 
-          {message.messageType !== "text" ? (
+          {message.messageType !== "text" || hasAttachments ? (
             <div className="mt-3">
               <Badge
                 variant={isOwnMessage ? "secondary" : "outline"}
@@ -244,7 +300,15 @@ const MessageBubble = ({
                   isOwnMessage && "bg-white/15 text-primary-foreground",
                 )}
               >
-                {message.messageType}
+                {audioAttachment && imageAttachments.length > 0
+                  ? "mixed"
+                  : audioAttachment
+                    ? "voice"
+                    : imageAttachments.length > 0
+                      ? imageAttachments.length > 1
+                        ? "images"
+                        : "image"
+                      : message.messageType}
               </Badge>
             </div>
           ) : null}
@@ -552,6 +616,7 @@ export const RoomTimeline = ({
                   imageUrl: null,
                   audioUrl: null,
                   audioTranscript: null,
+                  attachments: null,
                   metadata: null,
                   createdAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString(),

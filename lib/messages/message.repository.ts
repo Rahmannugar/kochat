@@ -1,3 +1,4 @@
+import type { MessageAttachment } from "@/lib/messages/message.client.types"
 import { and, desc, eq, ilike, lt, or } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { messages } from "@/lib/db/schema"
@@ -11,6 +12,7 @@ type CreateMessageInput = {
   imageUrl?: string | null
   audioUrl?: string | null
   audioTranscript?: string | null
+  attachments?: MessageAttachment[] | null
   metadata?: Record<string, unknown> | null
 }
 
@@ -39,6 +41,7 @@ export const messageRepository = {
     imageUrl,
     audioUrl,
     audioTranscript,
+    attachments,
     metadata,
   }: CreateMessageInput) => {
     const [message] = await db
@@ -52,6 +55,7 @@ export const messageRepository = {
         imageUrl: imageUrl ?? null,
         audioUrl: audioUrl ?? null,
         audioTranscript: audioTranscript ?? null,
+        attachments: attachments ?? null,
         metadata: metadata ?? null,
       })
       .returning()

@@ -23,6 +23,72 @@ const assertActiveRoomMembership = async (roomId: string, userId: string) => {
 const stripAiInvocation = (content: string) =>
   content.replace(/@ai\b/gi, "").trim();
 
+const getMessageImageAttachments = (message: {
+  imageUrl: string | null
+  metadata: Record<string, unknown> | null
+  attachments: Array<{
+    kind: "image" | "audio"
+    url: string
+    storagePath?: string | null
+  }> | null
+}) => {
+  const attachments = message.attachments?.filter(
+    (attachment) => attachment.kind === "image" && attachment.storagePath,
+  ) ?? []
+
+  if (attachments.length > 0) {
+    return attachments.map((attachment) => ({
+      imageUrl: attachment.url,
+      storagePath: attachment.storagePath ?? null,
+    }))
+  }
+
+  if (
+    message.imageUrl &&
+    message.metadata &&
+    typeof message.metadata === "object" &&
+    "storagePath" in message.metadata &&
+    typeof message.metadata.storagePath === "string"
+  ) {
+    return [
+      {
+        imageUrl: message.imageUrl,
+        storagePath: message.metadata.storagePath,
+      },
+    ]
+  }
+
+  return []
+}
+
+const getMessagePromptContent = (message: {
+  messageType: "text" | "image" | "voice"
+  content: string
+  audioTranscript: string | null
+  attachments: Array<{
+    kind: "image" | "audio"
+    transcript?: string | null
+  }> | null
+}) => {
+  const audioAttachment = message.attachments?.find(
+    (attachment) => attachment.kind === "audio" && attachment.transcript,
+  )
+
+  if (message.messageType === "image" && !message.content) {
+    return "[shared image]"
+  }
+
+  if (message.messageType === "voice" && message.audioTranscript) {
+    return message.audioTranscript
+  }
+
+  if (audioAttachment?.transcript) {
+    return audioAttachment.transcript
+  }
+
+  return message.content
+}
+
 const formatHumanMessage = (
   name: string | null | undefined,
   content: string,
@@ -73,11 +139,7 @@ const buildPromptPayload = async (
         role: "user",
         content: formatHumanMessage(
           message.senderUser?.name,
-          message.messageType === "image" && !message.content
-            ? "[shared image]"
-            : message.messageType === "voice" && message.audioTranscript
-              ? message.audioTranscript
-              : message.content,
+          getMessagePromptContent(message),
         ),
       };
     });
@@ -93,20 +155,18 @@ const buildPromptPayload = async (
       (message) =>
         message.sender === "human" &&
         message.senderUserId === triggerMessage.senderUserId &&
-        message.messageType === "image" &&
-        message.imageUrl &&
-        message.metadata &&
-        typeof message.metadata === "object" &&
-        "storagePath" in message.metadata &&
-        typeof message.metadata.storagePath === "string",
+        getMessageImageAttachments(message).length > 0,
     )
+    .flatMap((message) => getMessageImageAttachments(message))
     .slice(-4);
 
   const images = await Promise.all(
-    recentTriggerImages.map(async (message) => {
-      const storagePath = (message.metadata as { storagePath: string }).storagePath;
+    recentTriggerImages.map(async (attachment) => {
+      if (!attachment.storagePath) {
+        throw new Error("Image attachment storage path is missing")
+      }
 
-      return storageService.downloadChatImageAsBase64(storagePath);
+      return storageService.downloadChatImageAsBase64(attachment.storagePath);
     }),
   );
 

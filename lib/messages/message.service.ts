@@ -3,6 +3,7 @@ import { pushService } from "@/lib/push/push.service";
 import { roomRepository } from "@/lib/rooms/room.repository";
 import { roomEvents } from "@/lib/realtime/room-events";
 import type {
+  MessageAttachment,
   SearchMessagePage,
   RoomEventMessage,
   SearchMessageResult,
@@ -16,6 +17,7 @@ type CreateHumanMessageInput = {
   imageUrl?: string | null;
   audioUrl?: string | null;
   audioTranscript?: string | null;
+  attachments?: MessageAttachment[] | null;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -27,6 +29,7 @@ type CreateAiMessageInput = {
   imageUrl?: string | null;
   audioUrl?: string | null;
   audioTranscript?: string | null;
+  attachments?: MessageAttachment[] | null;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -234,6 +237,7 @@ export const messageService = {
     imageUrl,
     audioUrl,
     audioTranscript,
+    attachments,
     metadata,
   }: CreateHumanMessageInput) => {
     await assertActiveRoomMembership(roomId, senderUserId);
@@ -247,6 +251,7 @@ export const messageService = {
       imageUrl,
       audioUrl,
       audioTranscript,
+      attachments,
       metadata,
     });
 
@@ -278,9 +283,9 @@ export const messageService = {
       roomName: room?.name ?? "Kochat",
       preview:
         enrichedMessage.content.trim() ||
-        (enrichedMessage.messageType === "image"
+        (enrichedMessage.attachments?.some((attachment) => attachment.kind === "image")
           ? "Sent an image"
-          : enrichedMessage.messageType === "voice"
+          : enrichedMessage.attachments?.some((attachment) => attachment.kind === "audio")
             ? "Sent a voice note"
             : "Sent a message"),
     })
@@ -296,6 +301,7 @@ export const messageService = {
     imageUrl,
     audioUrl,
     audioTranscript,
+    attachments,
     metadata,
   }: CreateAiMessageInput) => {
     await assertActiveRoomMembership(roomId, actorUserId);
@@ -308,6 +314,7 @@ export const messageService = {
       imageUrl,
       audioUrl,
       audioTranscript,
+      attachments,
       metadata,
     });
 

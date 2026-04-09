@@ -216,10 +216,120 @@ export const useRoomComposer = ({
     [roomId],
   )
 
+  const sendComposedMessage = useCallback(
+    async ({
+      content,
+      imageFiles,
+      audioFile,
+      audioLabel,
+      quiet,
+    }: {
+      content?: string
+      imageFiles?: File[]
+      audioFile?: File | null
+      audioLabel?: string | null
+      quiet?: boolean
+    }) => {
+      if (!roomId) {
+        throw new Error("Room is required")
+      }
+
+      const trimmedContent = content?.trim() ?? ""
+      const normalizedImages = imageFiles ?? []
+
+      if (!trimmedContent && normalizedImages.length === 0 && !audioFile) {
+        const message = "Add text, images, or audio before sending."
+        toast.error(message)
+        throw new Error(message)
+      }
+
+      for (const file of normalizedImages) {
+        if (!CHAT_IMAGE_ALLOWED_MIME_TYPES.includes(normalizeMimeType(file.type))) {
+          const message = "Select a JPG, PNG, WebP, or GIF image."
+          toast.error(message)
+          throw new Error(message)
+        }
+
+        if (file.size > CHAT_IMAGE_MAX_SIZE_BYTES) {
+          const message = "Images must be 10MB or smaller."
+          toast.error(message)
+          throw new Error(message)
+        }
+      }
+
+      if (audioFile) {
+        if (!CHAT_AUDIO_ALLOWED_MIME_TYPES.includes(normalizeMimeType(audioFile.type))) {
+          const message = "Select an MP3, WAV, WebM, OGG, or M4A audio file."
+          toast.error(message)
+          throw new Error(message)
+        }
+
+        if (audioFile.size > CHAT_AUDIO_MAX_SIZE_BYTES) {
+          const message = "Audio files must be 5MB or smaller."
+          toast.error(message)
+          throw new Error(message)
+        }
+      }
+
+      setIsSendingMessage(true)
+      setIsUploadingImage(normalizedImages.length > 0)
+      setIsUploadingVoice(Boolean(audioFile))
+
+      try {
+        const formData = new FormData()
+
+        if (trimmedContent) {
+          formData.append("content", trimmedContent)
+        }
+
+        for (const file of normalizedImages) {
+          formData.append("images", file)
+        }
+
+        if (audioFile) {
+          formData.append("audio", audioFile)
+
+          if (audioLabel?.trim()) {
+            formData.append("audioLabel", audioLabel.trim())
+          }
+        }
+
+        const response = await apiClient.post<ApiResponse<CreateMessageResponse>>(
+          `/rooms/${roomId}/messages/compose`,
+          formData,
+        )
+
+        if (response.data.invokesAi && onAiTrigger) {
+          void onAiTrigger(response.data.message.id).catch(() => {
+            toast.error("AI couldn’t respond right now.")
+          })
+        }
+
+        if (!quiet) {
+          toast.success("Message sent.")
+        }
+
+        return response.data.message
+      } catch (error) {
+        const message = getApiErrorMessage("Unable to send your message.", error)
+        if (!quiet) {
+          toast.error(message)
+        }
+        throw error
+      } finally {
+        setIsSendingMessage(false)
+        setIsUploadingImage(false)
+        setIsUploadingVoice(false)
+      }
+    },
+    [onAiTrigger, roomId],
+  )
+
   return {
     isSendingMessage,
     isUploadingImage,
     isUploadingVoice,
+    sendComposedMessage,
     sendTextMessage,
     sendImageMessage,
     sendVoiceMessage,
