@@ -228,12 +228,13 @@ export const useRoomEvents = (roomId: string | undefined, user: AuthUser) => {
           setActiveUsers(mapPresenceStateToActiveUsers(channel))
         })
 
-        channel.subscribe((status) => {
+        channel.subscribe((status, err) => {
           console.info("[realtime] channel status", {
             roomId,
             userId: user.id,
             status,
             topic: getRoomTopic(roomId),
+            error: err ?? null,
           })
 
           if (!isMounted) {

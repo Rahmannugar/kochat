@@ -55,6 +55,14 @@ export const getSupabaseBrowser = () => {
       detectSessionInUrl: false,
     },
     accessToken: fetchRealtimeToken,
+    realtime: {
+      params: {
+        log_level: "info",
+      },
+      logger: (kind, msg, data) => {
+        console.info(`[supabase-realtime:${kind}] ${msg}`, data)
+      },
+    },
   })
 
   return cachedBrowserClient
