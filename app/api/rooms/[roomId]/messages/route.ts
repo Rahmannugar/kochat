@@ -17,6 +17,9 @@ type RouteContext = {
   }>;
 };
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export const GET = async (request: Request, context: RouteContext) => {
   try {
     const sessionUser = await requireAppUser();
@@ -33,7 +36,11 @@ export const GET = async (request: Request, context: RouteContext) => {
       cursor,
     });
 
-    return success(messages);
+    return success(messages, {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (routeError) {
     return handleRouteError(routeError);
   }

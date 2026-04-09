@@ -39,10 +39,15 @@ export const useRoomEvents = (roomId?: string) => {
 
     eventSource.addEventListener("open", () => {
       setConnectionState("open")
+      void queryClient.invalidateQueries({
+        queryKey: roomMessagesQueryKey(roomId),
+      })
     })
 
     eventSource.addEventListener("error", () => {
-      setConnectionState("error")
+      setConnectionState(
+        eventSource.readyState === EventSource.CLOSED ? "closed" : "connecting",
+      )
     })
 
     eventSource.addEventListener("ready", () => {

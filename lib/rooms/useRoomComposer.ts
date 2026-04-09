@@ -1,8 +1,13 @@
 "use client"
 
 import { useCallback, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import type { RoomEventMessage } from "@/lib/messages/message.client.types"
+import type {
+  PaginatedMessages,
+  RoomEventMessage,
+} from "@/lib/messages/message.client.types"
+import { roomMessagesQueryKey } from "@/lib/rooms/useRoomMessages"
 import {
   CHAT_AUDIO_ALLOWED_MIME_TYPES,
   CHAT_AUDIO_MAX_SIZE_BYTES,
@@ -59,9 +64,55 @@ export const useRoomComposer = ({
   roomId?: string
   onAiTrigger?: (messageId: string) => Promise<unknown>
 }) => {
+  const queryClient = useQueryClient()
   const [isSendingMessage, setIsSendingMessage] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isUploadingVoice, setIsUploadingVoice] = useState(false)
+
+  const insertMessageIntoTimeline = useCallback(
+    (message: RoomEventMessage) => {
+      if (!roomId) {
+        return
+      }
+
+      queryClient.setQueryData<
+        { pages: PaginatedMessages[]; pageParams: Array<string | null> } | undefined
+      >(roomMessagesQueryKey(roomId), (current) => {
+        if (!current || current.pages.length === 0) {
+          return {
+            pages: [
+              {
+                items: [message],
+                pageInfo: {
+                  hasNextPage: false,
+                  nextCursor: null,
+                },
+              },
+            ],
+            pageParams: [null],
+          }
+        }
+
+        const [firstPage, ...restPages] = current.pages
+        const nextItems = [message, ...firstPage.items].filter(
+          (candidate, index, items) =>
+            items.findIndex((entry) => entry.id === candidate.id) === index,
+        )
+
+        return {
+          ...current,
+          pages: [
+            {
+              ...firstPage,
+              items: nextItems,
+            },
+            ...restPages,
+          ],
+        }
+      })
+    },
+    [queryClient, roomId],
+  )
 
   const sendTextMessage = useCallback(
     async (
@@ -88,6 +139,7 @@ export const useRoomComposer = ({
           })
         }
 
+        insertMessageIntoTimeline(response.data.message)
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send your message.", error)
@@ -99,7 +151,7 @@ export const useRoomComposer = ({
         setIsSendingMessage(false)
       }
     },
-    [onAiTrigger, roomId],
+    [insertMessageIntoTimeline, onAiTrigger, roomId],
   )
 
   const sendImageMessage = useCallback(
@@ -147,6 +199,7 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/image`, formData)
 
+        insertMessageIntoTimeline(response.data.message)
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send image.", error)
@@ -158,7 +211,7 @@ export const useRoomComposer = ({
         setIsUploadingImage(false)
       }
     },
-    [roomId],
+    [insertMessageIntoTimeline, roomId],
   )
 
   const sendVoiceMessage = useCallback(
@@ -196,6 +249,7 @@ export const useRoomComposer = ({
           }>
         >(`/rooms/${roomId}/messages/voice`, formData)
 
+        insertMessageIntoTimeline(response.data.message)
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send voice message.", error)
@@ -207,7 +261,7 @@ export const useRoomComposer = ({
         setIsUploadingVoice(false)
       }
     },
-    [roomId],
+    [insertMessageIntoTimeline, roomId],
   )
 
   const sendComposedMessage = useCallback(
@@ -299,6 +353,7 @@ export const useRoomComposer = ({
           })
         }
 
+        insertMessageIntoTimeline(response.data.message)
         return response.data.message
       } catch (error) {
         const message = getApiErrorMessage("Unable to send your message.", error)
@@ -312,7 +367,7 @@ export const useRoomComposer = ({
         setIsUploadingVoice(false)
       }
     },
-    [onAiTrigger, roomId],
+    [insertMessageIntoTimeline, onAiTrigger, roomId],
   )
 
   return {
