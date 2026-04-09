@@ -12,7 +12,7 @@ export const roomEvents = {
     }
 
     const response = await fetch(
-      `${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/broadcast`,
+      `${env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`,
       {
         method: "POST",
         headers: {
@@ -21,10 +21,14 @@ export const roomEvents = {
           Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
         },
         body: JSON.stringify({
-          topic: getRoomTopic(event.roomId),
-          event: event.type,
-          payload,
-          private: true,
+          messages: [
+            {
+              topic: getRoomTopic(event.roomId),
+              event: event.type,
+              payload,
+              private: true,
+            },
+          ],
         }),
       },
     )
